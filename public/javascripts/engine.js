@@ -6,6 +6,9 @@ var MAX_TILES = 10;
 var TILE_HEIGHT = FIELD_SIZE/MAX_TILES;
 var TILE_WIDTH = FIELD_SIZE/MAX_TILES;
 
+//current workaround
+var tiles;
+
 //Playing field
 function Field(size){
 
@@ -82,17 +85,15 @@ pImage.src = "images/player.png";
 
 //Draw the grid
 function initCanvas(){
-  var field = createField(8);
-  console.log(field);
+  var field = createField(10);
   tiles = field.tiles;
   for(var i in tiles){
     for(var j in tiles[i]){
-      ctx.rect(tiles[i][j].x,tiles[i][j].y,TILE_WIDTH,TILE_HEIGHT);
-      ctx.stroke();
+      fillTile(i,j,"#FFFFFF")
     }
   }
   tiles[0][0].occupant = 1;
-  ctx.fillRect(tiles[0][0].x,tiles[0][0].y,TILE_WIDTH,TILE_HEIGHT);
+  fillTile(0,0,"#000000")
 }
 
 function render(){
@@ -115,8 +116,8 @@ function handleClick(e){
     handleClick.tile.y = -1;
   }
   //X and Y of the click
-  var xPosition = e.clientX - canvas.offsetLeft;
-  var yPosition = e.clientY - canvas.offsetTop;
+  var xPosition = e.pageX - canvas.offsetLeft;
+  var yPosition = e.pageY - canvas.offsetTop;
 
   //Which tile did I select?
   var xTile = Math.floor(MAX_TILES*xPosition/FIELD_SIZE);

@@ -35,6 +35,9 @@ function Tile(x,y){
   //Is this tile accessible?
   this.access = true;
 
+  //Who is occupying this tile?
+  this.occupant = 0;
+
 }
 
 //Initialize a playing area
@@ -88,6 +91,8 @@ function initCanvas(){
       ctx.stroke();
     }
   }
+  tiles[0][0].occupant = 1;
+  ctx.fillRect(tiles[0][0].x,tiles[0][0].y,TILE_WIDTH,TILE_HEIGHT);
 }
 
 function render(){
@@ -98,17 +103,57 @@ function render(){
 ///////////////////////////////////////CLICK EVENTS//////////////////////////////////////////
 
 canvas.addEventListener("click", handleClick, false);
+//Is something being moved right now?
 
 //Handle a click event
 function handleClick(e){
   e.preventDefault();
+  if(handleClick.midMove == undefined){
+    handleClick.midMove = false;
+    handleClick.tile = {};
+    handleClick.tile.x = -1;
+    handleClick.tile.y = -1;
+  }
+  //X and Y of the click
   var xPosition = e.clientX - canvas.offsetLeft;
   var yPosition = e.clientY - canvas.offsetTop;
 
   //Which tile did I select?
   var xTile = Math.floor(MAX_TILES*xPosition/FIELD_SIZE);
   var yTile = Math.floor(MAX_TILES*yPosition/FIELD_SIZE);
-  //Highlight it!
-  ctx.fillRect(tiles[xTile][yTile].x,tiles[xTile][yTile].y,TILE_WIDTH,TILE_HEIGHT);
 
+  //If this is the first click i.e. nothing has been selected
+  if(!handleClick.midMove){
+
+    //Highlight it!
+    if(tiles[xTile][yTile].occupant){
+      handleClick.midMove = true;
+      handleClick.tile.x = xTile;
+      handleClick.tile.y = yTile;
+      fillTile(xTile,yTile,"#666666");
+
+    }
+  }
+  //If something has been selected
+  else{ 
+    //Clear previously occupied tile
+    fillTile(handleClick.tile.x,handleClick.tile.y,"#FFFFFF")
+    //Fill in now occupied tile
+    fillTile(xTile,yTile,"#000000");
+    tiles[handleClick.tile.x][handleClick.tile.y].occupant = 0;
+    tiles[xTile][yTile].occupant = 1;
+    //Nothing is selected anymore
+    handleClick.midMove = false;
+    handleClick.tile.x = -1;
+    handleClick.tile.y = -1;
+  }
+
+}
+
+function fillTile(x,y,color){
+
+  ctx.fillStyle=color;
+  ctx.fillRect(tiles[x][y].x,tiles[x][y].y,TILE_WIDTH,TILE_HEIGHT);
+  ctx.strokeRect(tiles[x][y].x,tiles[x][y].y,TILE_WIDTH,TILE_HEIGHT);
+   
 }

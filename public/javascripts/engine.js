@@ -6,8 +6,12 @@ var MAX_TILES = 10;
 var TILE_HEIGHT = FIELD_SIZE/MAX_TILES;
 var TILE_WIDTH = FIELD_SIZE/MAX_TILES;
 
-//current workaround
+//current workarounds
 var tiles;
+var minion;
+var pieces = {
+  1: new Minion()
+};
 
 //Playing field
 function Field(size){
@@ -93,6 +97,8 @@ function initCanvas(){
     }
   }
   tiles[0][0].occupant = 1;
+  pieces[1].xTile = 0;
+  pieces[1].yTile = 0;
   fillTile(0,0,"#000000")
 }
 
@@ -126,35 +132,78 @@ function handleClick(e){
   //If this is the first click i.e. nothing has been selected
   if(!handleClick.midMove){
 
-    //Highlight it!
+    //Select it! Set all static variables to know that a piece is currently selected 
     if(tiles[xTile][yTile].occupant){
       handleClick.midMove = true;
       handleClick.tile.x = xTile;
       handleClick.tile.y = yTile;
-      fillTile(xTile,yTile,"#666666");
+      handleClick.piece = pieces[tiles[xTile][yTile].occupant]
+      selectPiece(xTile, yTile);
 
     }
   }
   //If something has been selected
   else{ 
-    //Clear previously occupied tile
-    fillTile(handleClick.tile.x,handleClick.tile.y,"#FFFFFF")
-    //Fill in now occupied tile
-    fillTile(xTile,yTile,"#000000");
-    tiles[handleClick.tile.x][handleClick.tile.y].occupant = 0;
-    tiles[xTile][yTile].occupant = 1;
-    //Nothing is selected anymore
-    handleClick.midMove = false;
-    handleClick.tile.x = -1;
-    handleClick.tile.y = -1;
+    //Make sure its being moved within its range
+    if(validMove(xTile,yTile,handleClick.piece.selectPattern(false))){
+      movePiece(handleClick.tile.x,handleClick.tile.y,xTile,yTile);
+      //Nothing is selected anymore
+      handleClick.midMove = false;
+      handleClick.tile.x = -1;
+      handleClick.tile.y = -1;
+      handleClick.piece = null;
+    }
+    //Else you clicked outside the valid range
+    else{
+
+      //Do something?
+
+    }
   }
 
 }
 
+
+//Fill a specified tile a specified color
 function fillTile(x,y,color){
 
   ctx.fillStyle=color;
   ctx.fillRect(tiles[x][y].x,tiles[x][y].y,TILE_WIDTH,TILE_HEIGHT);
   ctx.strokeRect(tiles[x][y].x,tiles[x][y].y,TILE_WIDTH,TILE_HEIGHT);
    
+}
+
+//Select a piece
+function selectPiece(x,y){
+  var selected = pieces[tiles[x][y].occupant]; //selected is now the minion on selected tile
+  fillTile(x,y,"#666666");
+  selected.highlightPattern(false);
+  
+}
+
+//Move a piece from x1,y1 to x2,y2
+function movePiece(x1,y1,x2,y2){
+  var temp = tiles[x1][y1].occupant; //temp holds the number of the selected piece
+  //Clear the highlighting from the piece being selected for motion
+  pieces[temp].clearPattern(false);
+
+  //Clear previously occupied tile
+  fillTile(x1,y1,"#FFFFFF")
+  //Fill in now occupied tile
+  fillTile(x2,y2,"#000000");
+  //Update the Minion with its new location
+  pieces[temp].xTile = x2;
+  pieces[temp].yTile = y2;
+  //Update the tiles with their new occupants
+  tiles[x1][y1].occupant = 0;
+  tiles[x2][y2].occupant = temp;
+}
+
+//Check if [x,y] is in validTiles
+function validMove(x,y,validTiles){
+  for(var index in validTiles){
+    if(validTiles[index][0] == x && validTiles[index][1] == y)
+      return true;
+  }
+  return false;
 }

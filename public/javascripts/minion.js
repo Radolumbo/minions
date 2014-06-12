@@ -1,12 +1,41 @@
-function Minion(){
+//Motion patterns
+var jobMP = {
+	"mage": "radial",
+	"warrior": "radial"
+};
+
+//Motion ranges
+var jobMR = {
+	"mage": 1,
+	"warrior": 3
+};
+
+//Attack patterns
+var jobAP = {
+	"mage": "radial",
+	"warrior": "radial"
+};
+//Attack ranges
+var jobAR = {
+	"mage": 3,
+	"warrior": 1
+};
+
+
+function Minion(job,image){
+
+	//image source
+	this.image = new Image();
+	this.image.src = image;
+	this.imageReady = false;
 
 	//Moving pattern
-	this.motionPattern = "radial";
-	this.motionRange = 3;
+	this.motionPattern = jobMP[job];
+	this.motionRange = jobMR[job];
 
 	//Attack pattern
-	this.attackPattern = "radial";
-	this.attackRange = 3;
+	this.attackPattern = jobAP[job];
+	this.attackRange = jobAR[job];
 
 	//HP
 	//cost
@@ -32,30 +61,34 @@ var patterns = {
 //Highlight the spaces the piece can move or attack based on bool isAttack
 function highlightPattern(isAttack){
 	//Select tiles
-	var tiles = this.selectPattern(isAttack);
+	var validTiles = this.selectPattern(isAttack);
 	//Color them appropriately
-	for(var i in tiles){
-		//Skip any invalid tiles i.e. tiles "off the grid"
-		if(tiles[i][0]<0 || tiles[i][1] < 0 || tiles[i][0]>=MAX_TILES || tiles[i][1]>=MAX_TILES)
+	for(var i in validTiles){
+		//Skip any invalid tiles i.e. tiles "off the grid" and skip the tile that the piece is on and skip occupied tiles
+		if(validTiles[i][0]<0 || validTiles[i][1] < 0 || validTiles[i][0]>=MAX_TILES || validTiles[i][1]>=MAX_TILES)
 			continue;
-		else if(tiles[i][0] == this.xTile && tiles[i][1] == this.yTile)
+		else if(validTiles[i][0] == this.xTile && validTiles[i][1] == this.yTile)
 			continue;
-		fillTile(tiles[i][0],tiles[i][1],"#B3F0FF");
+		else if(tiles[validTiles[i][0]][validTiles[i][1]].occupant)
+			continue;
+		fillTile(validTiles[i][0],validTiles[i][1],"#B3F0FF");
 	}
 }
 
 //Same as highlightPattern, except reverting things to their original color
 function clearPattern(isAttack){
 	//Select tiles
-	var tiles = this.selectPattern(isAttack);
+	var validTiles = this.selectPattern(isAttack);
 	//Color them appropriately
-	for(var i in tiles){
-		//Skip any invalid tiles i.e. tiles "off the grid" and skip the tile that the piece is on
-		if(tiles[i][0]<0 || tiles[i][1] < 0 || tiles[i][0]>=MAX_TILES || tiles[i][1]>=MAX_TILES)
+	for(var i in validTiles){
+		//Skip any invalid tiles i.e. tiles "off the grid" and skip the tile that the piece is on and skip occupied tiles
+		if(validTiles[i][0]<0 || validTiles[i][1] < 0 || validTiles[i][0]>=MAX_TILES || validTiles[i][1]>=MAX_TILES)
 			continue;
-		else if(tiles[i][0] == this.xTile && tiles[i][1] == this.yTile)
+		else if(validTiles[i][0] == this.xTile && validTiles[i][1] == this.yTile)
 			continue;
-		fillTile(tiles[i][0],tiles[i][1],"#FFFFFF");
+		else if(tiles[validTiles[i][0]][validTiles[i][1]].occupant)
+			continue;
+		fillTile(validTiles[i][0],validTiles[i][1],"#FFFFFF");
 	}
 }
 

@@ -10,8 +10,12 @@ var TILE_WIDTH = FIELD_SIZE/MAX_TILES;
 var tiles;
 var minion;
 var pieces = {
-  1: new Minion()
+  1: new Minion("warrior", "images/warrior.png"),
+  2: new Minion("mage", "images/mage.png")
 };
+pieces[1].image.onload = function(){ pieces[1].imageReady = true; };
+pieces[2].image.onload = function(){ pieces[2].imageReady = true; };
+
 
 //Playing field
 function Field(size){
@@ -96,14 +100,30 @@ function initCanvas(){
       fillTile(i,j,"#FFFFFF")
     }
   }
+
+  //Set pieces
   tiles[0][0].occupant = 1;
   pieces[1].xTile = 0;
   pieces[1].yTile = 0;
-  fillTile(0,0,"#000000")
+  //drawTile(0,0,pieces[1].image);
+  tiles[9][9].occupant = 2;
+  pieces[2].xTile = 9;
+  pieces[2].yTile = 9;
+  //drawTile(9,9,pieces[2].image);
 }
 
 function render(){
-
+  for(var i = 0; i < MAX_TILES; i++){
+    for(var j = 0; j < MAX_TILES; j++){
+      //If the tile is occupied, draw what is occupying it
+      if(tiles[i][j].occupant){
+        var piece = pieces[tiles[i][j].occupant];
+        if(piece.imageReady){
+          drawTile(i,j,piece.image);
+        }
+      }
+    }
+  }
 
 }
 
@@ -173,12 +193,19 @@ function fillTile(x,y,color){
    
 }
 
+//Fill a specified tile a specified image
+function drawTile(x,y,image){
+  ctx.drawImage(image,tiles[x][y].x,tiles[x][y].y,TILE_WIDTH,TILE_HEIGHT);
+   
+}
+
 //Select a piece
 function selectPiece(x,y){
   var selected = pieces[tiles[x][y].occupant]; //selected is now the minion on selected tile
   fillTile(x,y,"#666666");
   selected.highlightPattern(false);
-  
+  //Update page to show selected thing
+  document.getElementById("selectedPiece").innerHTML = tiles[x][y].occupant;
 }
 
 //Move a piece from x1,y1 to x2,y2
@@ -197,10 +224,16 @@ function movePiece(x1,y1,x2,y2){
   //Update the tiles with their new occupants
   tiles[x1][y1].occupant = 0;
   tiles[x2][y2].occupant = temp;
+
+  document.getElementById("selectedPiece").innerHTML = -1;
 }
 
 //Check if [x,y] is in validTiles
 function validMove(x,y,validTiles){
+  //If it's occupied, you can't move there!
+  if(tiles[x][y].occupant)
+    return false;
+
   for(var index in validTiles){
     if(validTiles[index][0] == x && validTiles[index][1] == y)
       return true;

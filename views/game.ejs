@@ -2,11 +2,16 @@
 <html>
   <head>
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='/stylesheets/game.css' />
   </head>
   <body>
-    <h1>Move the square!</h1>
-    <div id="wrapper">
+    <div id="app">
+      <h1>Move the square!</h1>
+      <div id="wrapper">
+      </div>
+      <div id="menu">
+        <p>Selected piece:</p><p id="selectedPiece">-1</p>
+      </div>
     </div>
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
@@ -17,6 +22,7 @@
 
     <script type="text/javascript">
       initCanvas();
+      setInterval(render,30);
     </script>
 
   </body>

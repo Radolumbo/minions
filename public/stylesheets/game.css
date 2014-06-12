@@ -1,0 +1,23 @@
+body {
+  padding: 25px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  color: #FFFFCC;
+  background-color: #333329;
+}
+a {
+  color: #00b7ff;
+}
+
+#app{
+	padding: 10px;
+
+}
+
+#wrapper{
+	display: inline-block;
+}
+
+#menu{
+	display: inline-block;
+	vertical-align: top;
+}

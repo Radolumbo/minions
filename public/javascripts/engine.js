@@ -105,25 +105,38 @@ function initCanvas(){
   tiles[0][0].occupant = 1;
   pieces[1].xTile = 0;
   pieces[1].yTile = 0;
-  //drawTile(0,0,pieces[1].image);
   tiles[9][9].occupant = 2;
   pieces[2].xTile = 9;
   pieces[2].yTile = 9;
-  //drawTile(9,9,pieces[2].image);
 }
 
 function render(){
+  //Render every piece on every tile
   for(var i = 0; i < MAX_TILES; i++){
     for(var j = 0; j < MAX_TILES; j++){
       //If the tile is occupied, draw what is occupying it
       if(tiles[i][j].occupant){
         var piece = pieces[tiles[i][j].occupant];
         if(piece.imageReady){
-          drawTile(i,j,piece.image);
+
+          //If the piece is selected, highlight it and its range
+          if(piece.selected){
+            alterDrawTile(i,j,piece.image);
+            //Pass false if move, pass true if attack
+            var isAttack = document.getElementById("attackButton").checked;
+            piece.clearPattern(!isAttack); //Necessary in case user is switching between attack and move mid-select
+            piece.highlightPattern(isAttack);
+          }
+          //Else the piece is not selected, draw it normally
+          else{
+            drawTile(i,j,piece.image);
+          }
+
         }
       }
     }
   }
+
 
 }
 
@@ -165,7 +178,8 @@ function handleClick(e){
   //If something has been selected
   else{ 
     //Make sure its being moved within its range
-    if(validMove(xTile,yTile,handleClick.piece.selectPattern(false))){
+    var isAttack = document.getElementById("attackButton").checked;
+    if(validMove(xTile,yTile,handleClick.piece.selectPattern(isAttack))){
       movePiece(handleClick.tile.x,handleClick.tile.y,xTile,yTile);
       //Nothing is selected anymore
       handleClick.midMove = false;
@@ -199,21 +213,38 @@ function drawTile(x,y,image){
    
 }
 
+//Alter the image and then draw it in a tile
+function alterDrawTile(x,y,image){
+  ctx.drawImage(image,tiles[x][y].x,tiles[x][y].y,TILE_WIDTH,TILE_HEIGHT);
+  var imageData = ctx.getImageData(tiles[x][y].x,tiles[x][y].y,TILE_WIDTH,TILE_HEIGHT);
+  var data = imageData.data;
+  for(var i = 0; i < data.length; i += 4) {
+    // red
+    data[i] = 255 - data[i];
+    // green
+    data[i + 1] = 255 - data[i + 1];
+    // blue
+    data[i + 2] = 255 - data[i + 2];
+  }
+  ctx.putImageData(imageData,tiles[x][y].x,tiles[x][y].y);
+}
+
 //Select a piece
 function selectPiece(x,y){
-  var selected = pieces[tiles[x][y].occupant]; //selected is now the minion on selected tile
-  fillTile(x,y,"#666666");
-  selected.highlightPattern(false);
+  var minion = pieces[tiles[x][y].occupant]; //minion is now the minion on selected tile
+  minion.selected = true;
   //Update page to show selected thing
-  document.getElementById("selectedPiece").innerHTML = tiles[x][y].occupant;
+  updateMenu(minion);
 }
 
 //Move a piece from x1,y1 to x2,y2
 function movePiece(x1,y1,x2,y2){
   var temp = tiles[x1][y1].occupant; //temp holds the number of the selected piece
   //Clear the highlighting from the piece being selected for motion
-  pieces[temp].clearPattern(false);
-
+  var isAttack = document.getElementById("attackButton").checked;
+  pieces[temp].clearPattern(isAttack);
+  //Piece is no longer selected
+  pieces[temp].selected = false;
   //Clear previously occupied tile
   fillTile(x1,y1,"#FFFFFF")
   //Fill in now occupied tile
@@ -225,7 +256,7 @@ function movePiece(x1,y1,x2,y2){
   tiles[x1][y1].occupant = 0;
   tiles[x2][y2].occupant = temp;
 
-  document.getElementById("selectedPiece").innerHTML = -1;
+  updateMenu(null);
 }
 
 //Check if [x,y] is in validTiles
@@ -240,3 +271,17 @@ function validMove(x,y,validTiles){
   }
   return false;
 }
+
+
+//////////////////////////////////////////////////////////UI INTERACTIONS////////////////////////////////////////////////////////////////////
+
+function updateMenu(minion){
+  if(!minion){
+    document.getElementById("selectedPiece").innerHTML = "NOTHING SELECTED";
+    return;
+  }
+  document.getElementById("selectedPiece").innerHTML = "Job: " + minion.job + "<br>"
+                                                     + "Movement range: " + minion.motionRange + "<br>"
+                                                     + "Attack range: " + minion.attackRange;
+}
+

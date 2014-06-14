@@ -37,6 +37,9 @@ function Minion(job,image){
 	this.attackPattern = jobAP[job];
 	this.attackRange = jobAR[job];
 
+	//job
+	this.job = job;
+
 	//HP
 	//cost
 	//special affects
@@ -44,6 +47,9 @@ function Minion(job,image){
 	//Current tile
 	this.xTile = -1;
 	this.yTile = -1;
+
+	//Is this minion currently being selected?
+	this.selected = false;
 
 	//functions
 	this.highlightPattern = highlightPattern;
@@ -71,7 +77,8 @@ function highlightPattern(isAttack){
 			continue;
 		else if(tiles[validTiles[i][0]][validTiles[i][1]].occupant)
 			continue;
-		fillTile(validTiles[i][0],validTiles[i][1],"#B3F0FF");
+		//Color based on whether isAttack
+		fillTile(validTiles[i][0],validTiles[i][1], isAttack ? "#FF0F3B" : "#B3F0FF");
 	}
 }
 

@@ -34,8 +34,10 @@
       });
     </script>
     
-
+    <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="javascripts/minion.js"></script>
+    <script type="text/javascript" src="javascripts/player.js"></script>
+    <script type="text/javascript" src="javascripts/field.js"></script>
     <script type="text/javascript" src="javascripts/engine.js"></script>
 
 
@@ -43,7 +45,7 @@
     <script type="text/javascript">
 
       $(function(){
-        initCanvas();
+        initGame();
         setInterval(render,30);
 
       });

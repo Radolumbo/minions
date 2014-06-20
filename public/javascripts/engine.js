@@ -8,92 +8,124 @@ var TILE_WIDTH = FIELD_SIZE/MAX_TILES;
 
 //current workarounds
 var tiles;
-var minion;
-var pieces = {
-  1: new Minion("warrior", "images/warrior.png"),
-  2: new Minion("mage", "images/mage.png")
+var socket;
+var canvas;
+var ctx;
+//var minion;
+var remotePlayer;
+var localPlayer;
+var pieces = [];
+//var pieces = {
+  //1: new Minion("warrior", "images/warrior.png"),
+  //2: new Minion("mage", "images/mage.png")
+//};
+//pieces[1].image.onload = function(){ pieces[1].imageReady = true; };
+//pieces[2].image.onload = function(){ pieces[2].imageReady = true; };
+
+
+///////////////////////////////////////////////////INITIALIZE///////////////////////////////////////////////////////
+function initGame(){
+  //Create the Canvas
+  canvas = document.createElement("canvas");
+  ctx = canvas.getContext("2d");
+  var wrapper = document.getElementById("wrapper");
+  canvas.width = FIELD_SIZE;
+  canvas.height = FIELD_SIZE;
+  wrapper.appendChild(canvas);
+  canvas.addEventListener("click", handleClick, false);
+
+  initCanvas(); //draw that stuff
+
+  //Create the local player
+  localPlayer = new Player(0); //I guess I'll use 0 as the ID for the local player for now, but I want it from the server
+  localPlayer.addMinion(new Minion("warrior", "images/warrior.png"));
+  localPlayer.getMinions()[0].image.onload = function(){ localPlayer.getMinions()[0].imageReady = true; };
+  pieces[pieces.length+1] = localPlayer.getMinions()[0]; //this does not work!! use a count variable instead
+
+  //Set pieces
+  tiles[4][3].occupant = 1;
+  pieces[1].xTile = 4;
+  pieces[1].yTile = 3;
+  //tiles[3][4].occupant = 2;
+  //pieces[2].xTile = 3;
+  //pieces[2].yTile = 4;
+
+  //Open connection AFTER generating player so we have something to send
+ // io.set('log level',false);
+  socket = io.connect("http://localhost", {port: 3000, transports: ["websocket"]});
+  socket.on("connect", onSocketConnected); //When this client connects
+  socket.on("disconnect", onSocketDisconnect); //When this client disconnects
+  socket.on("new player", onNewPlayer);
+  socket.on("move player", onMovePlayer);
+  socket.on("remove player", onRemovePlayer);
+
+
+  //Image rendering
+  /*var bgReady = false;
+  var bgImage = new Image();
+  bgImage.onload = function(){ bgReady = true; };
+  bgImage.src = "images/bg1.png";
+  var pReady = false;
+  var pImage = new Image();
+  pImage.onload = function(){ pReady = true; };
+  pImage.src = "images/player.png";*/
+
+  //Fire it up!
+}
+
+/////////////////////////////////////////CONNECTION/////////////////////////////////////////
+
+
+function onSocketConnected() {
+  socket.emit("new player", {"minions": extractMinions(localPlayer.getMinions())});
+  console.log("Connected to socket server");
 };
-pieces[1].image.onload = function(){ pieces[1].imageReady = true; };
-pieces[2].image.onload = function(){ pieces[2].imageReady = true; };
 
+function onSocketDisconnect() {
+  console.log("Disconnected from socket server");
+};
 
-//Playing field
-function Field(size){
-
-  //Even for non-uniform fields, there will still be a rightmost/topmost tile
-  this.length = size;
-  this.width = size;
-  
-  //2D array of all tiles in the field
-  this.tiles = [];
-
-}
-
-//Single "square" of the field
-function Tile(x,y){
-
-  //"id" of tile
-  this.xid = x;
-  this.yid = y;
-
-  //Position visually (for selecting tiles mostly)
-  this.x = x*TILE_WIDTH;
-  this.y = y*TILE_HEIGHT;
-
-  //Implement height later
-  this.height = 0;
-
-  //Is this tile accessible?
-  this.access = true;
-
-  //Who is occupying this tile?
-  this.occupant = 0;
-
-}
-
-//Initialize a playing area
-function createField(size){
-
-
-  var field = new Field(size);
-  
-  //Generate all other tiles
-  for(var i = 0; i<size; i++){
-    field.tiles[i] = new Array(size);
-    for(var j =0; j<size; j++){
-      field.tiles[i][j] = new Tile(i,j);
-    }
+//When the opponent connects TODO: todo: 
+function onNewPlayer(data) {
+  console.log("New player connected: "+data.id);
+  var newPlayer = new Player(data.id);
+  remotePlayer = newPlayer;
+  //Add all the minions that this player owns
+  for(var x in data.minions){
+    var newMinion = new Minion(data.minions[x].job, "images/"+data.minions[x].job+".png");
+    newMinion.xTile = (MAX_TILES-1) - data.minions[x].xTile;
+    newMinion.yTile = (MAX_TILES-1) - data.minions[x].yTile;
+    newMinion.image.onload = function(){ newMinion.imageReady = true; };
+    remotePlayer.addMinion(newMinion);
   }
+  //This is total bullshit right now just to force draw the new minions
+  var oppMinion = remotePlayer.getMinions()[0];
+  pieces[2] = oppMinion;
+  //Set pieces
+  tiles[oppMinion.xTile][oppMinion.yTile].occupant = 2;
+};
 
-  return field;
+//the opponent moved :O
+function onMovePlayer(data) {
+  movePiece((MAX_TILES-1)-data.x1,(MAX_TILES-1)-data.y1,(MAX_TILES-1)-data.x2,(MAX_TILES-1)-data.y2);
+};
 
-}
+function onRemovePlayer(data) {
+  var removePlayer = remotePlayer;
+  if(!removePlayer){
+    console.log("something went horribly wrong, could not find opponent " + data.id);
+    return;
+  }
+  remotePlayer = null;
+};
+
+/////////////////////////////////////////CANVAS///////////////////////////////////////
 
 
-
-/////////////////////////////////////////CANVAS SET UP///////////////////////////////////////
-
-//Create the Canvas
-var canvas = document.createElement("canvas");
-var ctx = canvas.getContext("2d");
-var wrapper = document.getElementById("wrapper");
-canvas.width = FIELD_SIZE;
-canvas.height = FIELD_SIZE;
-wrapper.appendChild(canvas);
-
-//Image rendering
-var bgReady = false;
-var bgImage = new Image();
-bgImage.onload = function(){ bgReady = true; };
-bgImage.src = "images/bg1.png";
-var pReady = false;
-var pImage = new Image();
-pImage.onload = function(){ pReady = true; };
-pImage.src = "images/player.png";
 
 //Draw the grid
 function initCanvas(){
-  var field = createField(10);
+  var field = createField(MAX_TILES);
   tiles = field.tiles;
   for(var i in tiles){
     for(var j in tiles[i]){
@@ -101,13 +133,6 @@ function initCanvas(){
     }
   }
 
-  //Set pieces
-  tiles[0][0].occupant = 1;
-  pieces[1].xTile = 0;
-  pieces[1].yTile = 0;
-  tiles[9][9].occupant = 2;
-  pieces[2].xTile = 9;
-  pieces[2].yTile = 9;
 }
 
 function render(){
@@ -134,6 +159,9 @@ function render(){
 
         }
       }
+      else{
+
+      }
     }
   }
 
@@ -142,7 +170,6 @@ function render(){
 
 ///////////////////////////////////////CLICK EVENTS//////////////////////////////////////////
 
-canvas.addEventListener("click", handleClick, false);
 //Is something being moved right now?
 
 //Handle a click event
@@ -170,33 +197,45 @@ function handleClick(e){
       handleClick.midMove = true;
       handleClick.tile.x = xTile;
       handleClick.tile.y = yTile;
-      handleClick.piece = pieces[tiles[xTile][yTile].occupant]
-      selectPiece(xTile, yTile);
-
+      handleClick.piece = selectPiece(xTile, yTile);
     }
   }
   //If something has been selected
   else{ 
     //Make sure its being moved within its range
     var isAttack = document.getElementById("attackButton").checked;
-    if(validMove(xTile,yTile,handleClick.piece.selectPattern(isAttack))){
+    //Move the piece
+    if(!isAttack && validMove(xTile,yTile,handleClick.piece.selectPattern(false),false)){
       movePiece(handleClick.tile.x,handleClick.tile.y,xTile,yTile);
-      //Nothing is selected anymore
-      handleClick.midMove = false;
-      handleClick.tile.x = -1;
-      handleClick.tile.y = -1;
-      handleClick.piece = null;
+      //Send message that this piece was moved
+      socket.emit("move player", {"x1": handleClick.tile.x, "y1": handleClick.tile.y, "x2": xTile, "y2": yTile});
     }
-    //Else you clicked outside the valid range
+    //Attempt an attack
+    else if(isAttack && validMove(xTile,yTile,handleClick.piece.selectPattern(true),true)){
+      //There's a target
+      if(tiles[xTile][yTile].occupant && !(xTile == handleClick.tile.x && yTile == handleClick.tile.y)){
+        attackMinion(handleClick.piece,pieces[tiles[xTile][yTile].occupant]);
+      }
+      //The attack was in range, but there was no target
+      else{
+        deselectPiece(handleClick.tile.x, handleClick.tile.y);
+      }
+    }
+    //Else you clicked outside the valid range, deselect the piece
     else{
-
-      //Do something?
-
+      deselectPiece(handleClick.tile.x, handleClick.tile.y);
     }
+    //Nothing is selected anymore
+    handleClick.midMove = false;
+    handleClick.tile.x = -1;
+    handleClick.tile.y = -1;
+    handleClick.piece = null;
   }
 
 }
 
+
+///////////////////////////////////////////FIELD MANIPULATION/////////////////////////////
 
 //Fill a specified tile a specified color
 function fillTile(x,y,color){
@@ -235,17 +274,24 @@ function selectPiece(x,y){
   minion.selected = true;
   //Update page to show selected thing
   updateMenu(minion);
+  return minion;
+}
+
+function deselectPiece(x,y){
+  var minion = pieces[tiles[x][y].occupant]; //minion is now the minion on selected tile
+  minion.selected = false;
+  //Update page to show nothing is selected
+  var isAttack = document.getElementById("attackButton").checked;
+  minion.clearPattern(isAttack);
+  updateMenu(null);
 }
 
 //Move a piece from x1,y1 to x2,y2
 function movePiece(x1,y1,x2,y2){
   var temp = tiles[x1][y1].occupant; //temp holds the number of the selected piece
-  //Clear the highlighting from the piece being selected for motion
-  var isAttack = document.getElementById("attackButton").checked;
-  pieces[temp].clearPattern(isAttack);
   //Piece is no longer selected
-  pieces[temp].selected = false;
-  //Clear previously occupied tile
+  deselectPiece(x1, y1);
+    //Clear previously occupied tile
   fillTile(x1,y1,"#FFFFFF")
   //Fill in now occupied tile
   fillTile(x2,y2,"#000000");
@@ -255,23 +301,43 @@ function movePiece(x1,y1,x2,y2){
   //Update the tiles with their new occupants
   tiles[x1][y1].occupant = 0;
   tiles[x2][y2].occupant = temp;
-
-  updateMenu(null);
 }
 
 //Check if [x,y] is in validTiles
-function validMove(x,y,validTiles){
-  //If it's occupied, you can't move there!
-  if(tiles[x][y].occupant)
-    return false;
+function validMove(x,y,validTiles,isAttack){
+  //For motion:
+  if(!isAttack){
+    //If it's occupied, you can't move there!
+    if(tiles[x][y].occupant)
+      return false;
 
-  for(var index in validTiles){
-    if(validTiles[index][0] == x && validTiles[index][1] == y)
-      return true;
+    for(var index in validTiles){
+      if(validTiles[index][0] == x && validTiles[index][1] == y)
+        return true;
+    }
+    return false;
+  }
+  else{
+    for(var index in validTiles){
+      if(validTiles[index][0] == x && validTiles[index][1] == y)
+        return true;
+    }
   }
   return false;
 }
 
+function attackMinion(aggressor, defender){
+  defender.HP = defender.HP - aggressor.attack;
+  //The minion dies
+  if(defender.HP <= 0){
+    tiles[defender.xTile][defender.yTile].occupant = 0;
+    defender.x = -1;
+    defender.y = -1;
+    defender.alive = false;
+
+  }
+  deselectPiece(aggressor.xTile, aggressor.yTile);
+}
 
 //////////////////////////////////////////////////////////UI INTERACTIONS////////////////////////////////////////////////////////////////////
 

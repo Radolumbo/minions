@@ -17,6 +17,7 @@
     "mongodb": "*",
     "monk": "*",
     "socket.io": "*",
-    "express-helpers": "*"
+    "express-helpers": "*",
+    "indexof": "*"
   }
 }

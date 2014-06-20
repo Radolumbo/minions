@@ -52,7 +52,7 @@ function initGame(){
 
   //Open connection AFTER generating player so we have something to send
  // io.set('log level',false);
-  socket = io.connect("http://localhost", {port: 3000, transports: ["websocket"]});
+  socket = io.connect("http://radolumbo.herokuapp.com", {port: 3000, transports: ["websocket"]});
   socket.on("connect", onSocketConnected); //When this client connects
   socket.on("disconnect", onSocketDisconnect); //When this client disconnects
   socket.on("new player", onNewPlayer);

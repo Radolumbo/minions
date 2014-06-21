@@ -55,7 +55,14 @@ function initGame(){
 
   //Open connection AFTER generating player so we have something to send
  // io.set('log level',false);
-  socket = io.connect("http://localhost", {port: 3000, transports: ["websocket"]});
+ //TODO:
+  //workaround for working between localhost and radolumbo TEMPORARY
+  if(window.location=="http://localhost:3000/game"){
+    socket = io.connect("http://localhost", {port: 3000, transports: ["websocket"]});
+  }
+  else{
+    socket = io.connect("http://radolumbo", {port: 3000, transports: ["websocket"]});
+  }
   socket.on("connect", onSocketConnected); //When this client connects
   socket.on("disconnect", onSocketDisconnect); //When this client disconnects
   socket.on("new player", onNewPlayer);
@@ -306,9 +313,9 @@ function handleMouseUp(e){
     var isAttack = document.getElementById("attackButton").checked;
     //If it's a valid move, make it
     if(validMove(xTile,yTile,drag.piece.selectPattern(isAttack),isAttack)){
-      movePiece(drag.piece.xTile, drag.piece.yTile, xTile, yTile);
       //Send message that this piece was moved
       socket.emit("move player", {"x1": drag.piece.xTile, "y1": drag.piece.yTile, "x2": xTile, "y2": yTile});
+      movePiece(drag.piece.xTile, drag.piece.yTile, xTile, yTile);
       //Prevent a click event from happening if there was motion by setting the timestamp to -1
       //since click events check to see how much time passed from mousedown.
       drag.timestamp = -1;

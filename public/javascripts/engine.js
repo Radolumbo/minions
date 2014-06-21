@@ -33,6 +33,9 @@ function initGame(){
   canvas.height = FIELD_SIZE;
   wrapper.appendChild(canvas);
   canvas.addEventListener("click", handleClick, false);
+  canvas.addEventListener("mousedown", handleMouseDown, false);
+  canvas.addEventListener("mouseup", handleMouseUp, false);
+
 
   initCanvas(); //draw that stuff
 
@@ -52,7 +55,7 @@ function initGame(){
 
   //Open connection AFTER generating player so we have something to send
  // io.set('log level',false);
-  socket = io.connect("http://radolumbo.herokuapp.com", {port: 3000, transports: ["websocket"]});
+  socket = io.connect("http://localhost", {port: 3000, transports: ["websocket"]});
   socket.on("connect", onSocketConnected); //When this client connects
   socket.on("disconnect", onSocketDisconnect); //When this client disconnects
   socket.on("new player", onNewPlayer);
@@ -123,26 +126,31 @@ function onRemovePlayer(data) {
 
 
 
-//Draw the grid
+//Create the grid
 function initCanvas(){
   var field = createField(MAX_TILES);
   tiles = field.tiles;
-  for(var i in tiles){
-    for(var j in tiles[i]){
-      fillTile(i,j,"#FFFFFF")
-    }
-  }
-
 }
 
 function render(){
+  //First, draw every tile
+  for(var i in tiles){
+    for(var j in tiles[i]){
+      fillTile(i,j,"#FFFFFF");
+    }
+  }
+
   //Render every piece on every tile
   for(var i = 0; i < MAX_TILES; i++){
     for(var j = 0; j < MAX_TILES; j++){
       //If the tile is occupied, draw what is occupying it
       if(tiles[i][j].occupant){
         var piece = pieces[tiles[i][j].occupant];
-        if(piece.imageReady){
+        //If this piece is being dragged, don't draw it
+        if(drag.piece == piece){
+          fillTile(i,j,"#FFFFFF"); //Just leave this spot empty
+        }
+        else if(piece.imageReady){
 
           //If the piece is selected, highlight it and its range
           if(piece.selected){
@@ -165,16 +173,33 @@ function render(){
     }
   }
 
+  //Draw the piece being dragged, if there is one
+  if(drag.active){
+    //The image should be centered around the mouse--this finds the corner to start drawing from
+    var cornerX = drag.x - TILE_HEIGHT/2;
+    var cornerY = drag.y - TILE_HEIGHT/2;
+    var isAttack = document.getElementById("attackButton").checked;
+    drag.piece.highlightPattern(isAttack);
+    drawOutsideTile(cornerX, cornerY, drag.piece.image);
+  }
+
 
 }
 
-///////////////////////////////////////CLICK EVENTS//////////////////////////////////////////
+///////////////////////////////////////CLICK EVENT//////////////////////////////////////////
 
-//Is something being moved right now?
 
 //Handle a click event
 function handleClick(e){
   e.preventDefault();
+
+  //WE DON'T WANT TO HAVE THIS FUNCTION RUN IF A DRAG IS HAPPENING
+  var passedTime = new Date().getTime() - drag.timestamp;
+  //If it's been greater than 300ms, it's probably a drag, not a click
+  if(passedTime > 300){
+    return; 
+  }
+
   if(handleClick.midMove == undefined){
     handleClick.midMove = false;
     handleClick.tile = {};
@@ -234,8 +259,86 @@ function handleClick(e){
 
 }
 
+//////////////////////////////////////////////DRAG AND DROP EVENTS/////////////////////////////////////////////
+//Collectively, the 3 drag/drop events (mousedown,move,up) all alter this object to communicate info to one another
+var drag = {
+  "active": false,
+  "x": -1,
+  "y": -1,
+  "piece": null,
+  "timestamp": -1 //this is used to determine if we are doing a click or a drag
+};
+
+function handleMouseDown(e){
+
+  //What's the time?
+  drag.timestamp = new Date().getTime();
+  
+  //If we're in the middle of a click, ABORT
+  if(handleClick.midMove)
+    return;
+
+
+  //X and Y of the click
+  drag.x = e.pageX - canvas.offsetLeft;
+  drag.y = e.pageY - canvas.offsetTop;
+
+  //Which tile did I select?
+  var xTile = Math.floor(MAX_TILES*drag.x/FIELD_SIZE);
+  var yTile = Math.floor(MAX_TILES*drag.y/FIELD_SIZE);
+
+  //If a minion is in the tile you just clicked
+  if(tiles[xTile][yTile].occupant){
+    canvas.addEventListener("mousemove", handleMouseMove, false);
+    drag.piece = selectPiece(xTile, yTile);
+    drag.active = true;
+  }
+
+}
+
+function handleMouseUp(e){
+
+  //If a minion has been picked it up, drop it
+  if(drag.active){
+    //Which tile did I drop the piece?
+    var xTile = Math.floor(MAX_TILES*drag.x/FIELD_SIZE);
+    var yTile = Math.floor(MAX_TILES*drag.y/FIELD_SIZE);
+    var isAttack = document.getElementById("attackButton").checked;
+    //If it's a valid move, make it
+    if(validMove(xTile,yTile,drag.piece.selectPattern(isAttack),isAttack)){
+      movePiece(drag.piece.xTile, drag.piece.yTile, xTile, yTile);
+      //Prevent a click event from happening if there was motion by setting the timestamp to -1
+      //since click events check to see how much time passed from mousedown.
+      drag.timestamp = -1;
+    }
+  }
+  //Make sure to deselect the piece
+  if(drag.piece){
+    deselectPiece(drag.piece.xTile,drag.piece.yTile);
+  }
+  drag.piece = null;
+  drag.x = -1;
+  drag.y = -1;
+  drag.active = false;
+  canvas.removeEventListener("mousemove", handleMouseMove, false);
+
+
+}
+
+function handleMouseMove(e){
+  //Update where the drag is
+  if(drag.active){
+    drag.x = e.pageX - canvas.offsetLeft;
+    drag.y = e.pageY - canvas.offsetTop; 
+  }
+}
 
 ///////////////////////////////////////////FIELD MANIPULATION/////////////////////////////
+
+//Draw somewhere that isn't within a tile
+function drawOutsideTile(x,y,image){
+  ctx.drawImage(image,x,y,TILE_WIDTH,TILE_HEIGHT);
+}
 
 //Fill a specified tile a specified color
 function fillTile(x,y,color){
@@ -282,7 +385,7 @@ function deselectPiece(x,y){
   minion.selected = false;
   //Update page to show nothing is selected
   var isAttack = document.getElementById("attackButton").checked;
-  minion.clearPattern(isAttack);
+  minion.clearPattern(isAttack); //need to move this into render somehow
   updateMenu(null);
 }
 
@@ -292,7 +395,7 @@ function movePiece(x1,y1,x2,y2){
   //Piece is no longer selected
   deselectPiece(x1, y1);
     //Clear previously occupied tile
-  fillTile(x1,y1,"#FFFFFF")
+  fillTile(x1,y1,"#FFFFFF") //I think we can get rid of this stuff.
   //Fill in now occupied tile
   fillTile(x2,y2,"#000000");
   //Update the Minion with its new location
@@ -326,6 +429,7 @@ function validMove(x,y,validTiles,isAttack){
   return false;
 }
 
+//What happens when a minion attacks?
 function attackMinion(aggressor, defender){
   defender.HP = defender.HP - aggressor.attack;
   //The minion dies

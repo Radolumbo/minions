@@ -70,6 +70,9 @@ function onNewPlayer(data) {
 
 //When a move is made
 function onMovePlayer(data) {
+	var minion = minionByXYandID(data.x1, data.y1, this.id);
+	minion.xTile = data.x2;
+	minion.yTile = data.y2;
 	this.broadcast.emit("move player", {"x1": data.x1, "y1": data.y1, "x2": data.x2, "y2": data.y2});
 };
 
@@ -77,6 +80,15 @@ function playerById(id){
 	for(var i = 0; i < players.length; i++){
 		if(players[i].id == id)
 			return players[i];
+	}
+	return false;
+}
+
+function minionByXYandID(x,y,id){
+	var player = playerById(id);
+	for(var i in player.minions){
+		if(x == player.minions[i].xTile && y == player.minions[i].yTile)
+			return player.minions[i];
 	}
 	return false;
 }

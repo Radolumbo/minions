@@ -120,6 +120,7 @@ function onRemovePlayer(data) {
     console.log("something went horribly wrong, could not find opponent " + data.id);
     return;
   }
+  alert("The opponet left! What a dick!");
   remotePlayer = null;
 };
 

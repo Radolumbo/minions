@@ -70,6 +70,9 @@ function Minion(job,image){
 
 	//dead
 	this.alive = true;
+
+	//Is this my minion?
+	this.mine = true;
 }
 
 //Possible motion patterns

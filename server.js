@@ -7,6 +7,7 @@ var io;
 var socket;
 var pieces;
 var players;
+var turn; //whose turn is it!
 
 //Initialize server
 function init(server){
@@ -50,16 +51,27 @@ function onClientDisconnect() {
 
 //Create a new player
 function onNewPlayer(data) {
+	
 	//associate the client id with the player id, makes things simple
 	var newPlayer = new Player(this.id);
+
+		//Pick the person whose turn it is to start once there's two players
+		//Players.length should be = 1 because that means one person has already connected
+		//and the second person is connecting now. We don't push this player until the end.
+	if(players.length == 1 && Math.floor(Math.random()*2)){
+		turn = players[0].id;
+	}
+	else{
+		turn = newPlayer.id;
+	}
 	newPlayer.minions = data.minions;
 	//Send the new player to all existing players
-	this.broadcast.emit("new player", {"id": newPlayer.id, "minions": newPlayer.minions});
+	this.broadcast.emit("new player", {"id": newPlayer.id, "minions": newPlayer.minions, "firstTurn": newPlayer.id==turn});
 	var existingPlayer;
 	//Send all existing players to this new player
 	for(i = 0; i < players.length; i++){
 		existingPlayer = players[i];
-		this.emit("new player", {"id": existingPlayer.id, "minions": existingPlayer.minions});
+		this.emit("new player", {"id": existingPlayer.id, "minions": existingPlayer.minions, "firstTurn": existingPlayer.id==turn});
 	}
 	//It's important to point out that this.broadcast.emit sends a messages to all clients
 	//bar the one we're dealing with, while this.emit send a message only to the client we're

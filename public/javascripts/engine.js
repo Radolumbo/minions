@@ -7,20 +7,14 @@ var TILE_HEIGHT = FIELD_SIZE/MAX_TILES;
 var TILE_WIDTH = FIELD_SIZE/MAX_TILES;
 
 //current workarounds
-var tiles;
-var socket;
-var canvas;
-var ctx;
-//var minion;
-var remotePlayer;
-var localPlayer;
-var pieces = [];
-//var pieces = {
-  //1: new Minion("warrior", "images/warrior.png"),
-  //2: new Minion("mage", "images/mage.png")
-//};
-//pieces[1].image.onload = function(){ pieces[1].imageReady = true; };
-//pieces[2].image.onload = function(){ pieces[2].imageReady = true; };
+var tiles; //The tiles on the board
+var socket; //The socket via which connection with the server is established
+var canvas; //The canvas being rendered
+var ctx; //The context of the canvas -- used to draw on the canvas
+var myTurn; //Is it my turn?
+var remotePlayer; //The opponent
+var localPlayer; //You
+var pieces = []; // All the pieces on the board
 
 
 ///////////////////////////////////////////////////INITIALIZE///////////////////////////////////////////////////////
@@ -43,19 +37,17 @@ function initGame(){
   localPlayer = new Player(0); //I guess I'll use 0 as the ID for the local player for now, but I want it from the server
   localPlayer.addMinion(new Minion("warrior", "images/warrior.png"));
   localPlayer.getMinions()[0].image.onload = function(){ localPlayer.getMinions()[0].imageReady = true; };
-  pieces[pieces.length+1] = localPlayer.getMinions()[0]; //this does not work!! use a count variable instead
+  //TODO:
+  pieces[pieces.length+1] = localPlayer.getMinions()[0]; //this does not work!! use a count variable instead 
 
   //Set pieces
+  //TODO:
   tiles[4][3].occupant = 1;
   pieces[1].xTile = 4;
   pieces[1].yTile = 3;
-  //tiles[3][4].occupant = 2;
-  //pieces[2].xTile = 3;
-  //pieces[2].yTile = 4;
 
   //Open connection AFTER generating player so we have something to send
- // io.set('log level',false);
- //TODO:
+  //TODO:
   //workaround for working between localhost and radolumbo TEMPORARY
   if(window.location=="http://localhost:3000/game"){
     socket = io.connect("http://localhost", {port: 3000, transports: ["websocket"]});
@@ -69,18 +61,6 @@ function initGame(){
   socket.on("move player", onMovePlayer);
   socket.on("remove player", onRemovePlayer);
 
-
-  //Image rendering
-  /*var bgReady = false;
-  var bgImage = new Image();
-  bgImage.onload = function(){ bgReady = true; };
-  bgImage.src = "images/bg1.png";
-  var pReady = false;
-  var pImage = new Image();
-  pImage.onload = function(){ pReady = true; };
-  pImage.src = "images/player.png";*/
-
-  //Fire it up!
 }
 
 /////////////////////////////////////////CONNECTION/////////////////////////////////////////
@@ -105,6 +85,8 @@ function onNewPlayer(data) {
     var newMinion = new Minion(data.minions[x].job, "images/"+data.minions[x].job+".png");
     newMinion.xTile = (MAX_TILES-1) - data.minions[x].xTile;
     newMinion.yTile = (MAX_TILES-1) - data.minions[x].yTile;
+    newMinion.mine = false;
+    //Make sure to set the onload function
     newMinion.image.onload = function(){ newMinion.imageReady = true; };
     remotePlayer.addMinion(newMinion);
   }
@@ -113,10 +95,22 @@ function onNewPlayer(data) {
   pieces[2] = oppMinion;
   //Set pieces
   tiles[oppMinion.xTile][oppMinion.yTile].occupant = 2;
+
+  //Determine whose turn it is
+  myTurn = !data.firstTurn;
+  if(myTurn)
+    document.getElementById("whoseTurn").innerHTML = 'YOUR TURN!';
+  else
+    document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
+
 };
 
 //the opponent moved :O
 function onMovePlayer(data) {
+  //Now it's your turn!
+  myTurn = true;
+  document.getElementById("whoseTurn").innerHTML = 'YOUR TURN!';
+  //to make the board inverted:
   movePiece((MAX_TILES-1)-data.x1,(MAX_TILES-1)-data.y1,(MAX_TILES-1)-data.x2,(MAX_TILES-1)-data.y2);
 };
 
@@ -186,7 +180,9 @@ function render(){
     var cornerX = drag.x - TILE_HEIGHT/2;
     var cornerY = drag.y - TILE_HEIGHT/2;
     var isAttack = document.getElementById("attackButton").checked;
+    //Highlight valid move range
     drag.piece.highlightPattern(isAttack);
+    //Draw piece mid-drag
     drawOutsideTile(cornerX, cornerY, drag.piece.image);
   }
 
@@ -199,6 +195,9 @@ function render(){
 //Handle a click event
 function handleClick(e){
   e.preventDefault();
+
+  if(!myTurn)
+    return;
 
   //WE DON'T WANT TO HAVE THIS FUNCTION RUN IF A DRAG IS HAPPENING
   var passedTime = new Date().getTime() - drag.timestamp;
@@ -225,11 +224,15 @@ function handleClick(e){
   if(!handleClick.midMove){
 
     //Select it! Set all static variables to know that a piece is currently selected 
-    if(tiles[xTile][yTile].occupant){
+    if(tiles[xTile][yTile].occupant && pieces[tiles[xTile][yTile].occupant].mine){
       handleClick.midMove = true;
       handleClick.tile.x = xTile;
       handleClick.tile.y = yTile;
       handleClick.piece = selectPiece(xTile, yTile);
+    }
+    //There was a minion, but it's not yours. Still update the menu.
+    else if(tiles[xTile][yTile].occupant){
+      updateMenu(pieces[tiles[xTile][yTile].occupant]);
     }
   }
   //If something has been selected
@@ -241,12 +244,16 @@ function handleClick(e){
       movePiece(handleClick.tile.x,handleClick.tile.y,xTile,yTile);
       //Send message that this piece was moved
       socket.emit("move player", {"x1": handleClick.tile.x, "y1": handleClick.tile.y, "x2": xTile, "y2": yTile});
+      myTurn = false;
+      document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
     }
     //Attempt an attack
     else if(isAttack && validMove(xTile,yTile,handleClick.piece.selectPattern(true),true)){
       //There's a target
       if(tiles[xTile][yTile].occupant && !(xTile == handleClick.tile.x && yTile == handleClick.tile.y)){
         attackMinion(handleClick.piece,pieces[tiles[xTile][yTile].occupant]);
+        myTurn = false;
+        document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
       }
       //The attack was in range, but there was no target
       else{
@@ -277,7 +284,8 @@ var drag = {
 };
 
 function handleMouseDown(e){
-
+  if(!myTurn)
+    return;
   //What's the time?
   drag.timestamp = new Date().getTime();
 
@@ -295,16 +303,21 @@ function handleMouseDown(e){
   var yTile = Math.floor(MAX_TILES*drag.y/FIELD_SIZE);
 
   //If a minion is in the tile you just clicked
-  if(tiles[xTile][yTile].occupant){
+  if(tiles[xTile][yTile].occupant && pieces[tiles[xTile][yTile].occupant].mine){
     canvas.addEventListener("mousemove", handleMouseMove, false);
     drag.piece = selectPiece(xTile, yTile);
     drag.active = true;
+  }
+  //It's a minion, but it ain't yours. Still, show info in menu.
+  else if(tiles[xTile][yTile].occupant){
+      updateMenu(pieces[tiles[xTile][yTile].occupant]);
   }
 
 }
 
 function handleMouseUp(e){
-
+  if(!myTurn)
+    return;
   //If a minion has been picked it up, drop it
   if(drag.active){
     //Which tile did I drop the piece?
@@ -319,6 +332,9 @@ function handleMouseUp(e){
       //Prevent a click event from happening if there was motion by setting the timestamp to -1
       //since click events check to see how much time passed from mousedown.
       drag.timestamp = -1;
+      //Turn's over, boys
+      myTurn = false;
+      document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
     }
   }
   //Make sure to deselect the piece
@@ -413,6 +429,7 @@ function movePiece(x1,y1,x2,y2){
   //Update the tiles with their new occupants
   tiles[x1][y1].occupant = 0;
   tiles[x2][y2].occupant = temp;
+  //Turn is over!
 }
 
 //Check if [x,y] is in validTiles
@@ -463,4 +480,3 @@ function updateMenu(minion){
                                                      + "Movement range: " + minion.motionRange + "<br>"
                                                      + "Attack range: " + minion.attackRange;
 }
-

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/game.css' />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> 
+    <link rel="stylesheet" href="/stylesheets/jquery-ui-1.10.4.custom.css" />
+    <script src="/javascripts/jquery-ui-1.10.4.custom.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <h1 id="whoseTurn">HAVE FUN!</h1>
+      <div id="wrapper">
+      </div>
+      <div id="menu">
+        <p>Selected piece:</p><p id="selectedPiece">NOTHING SELECTED</p>
+        <form>
+          <fieldset>
+            <legend>Action</legend>
+            <div id="actionChoice">
+              <input type="radio" id="moveButton" name="action" checked="checked">
+              <label for="moveButton">Move</label>
+         
+              <input type="radio" id="attackButton" name="action">
+              <label for="attackButton">Attack</label>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      $(function() {
+        $( "#actionChoice" ).buttonset();
+      });
+    </script>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="javascripts/minion.js"></script>
+    <script type="text/javascript" src="javascripts/player.js"></script>
+    <script type="text/javascript" src="javascripts/field.js"></script>
+    <script type="text/javascript" src="javascripts/engine.js"></script>
+
+    <script type="text/javascript">
+
+      $(function(){
+        initGame();
+        setInterval(render,30);
+      });
+    </script>
+
+  </body>
+</html>

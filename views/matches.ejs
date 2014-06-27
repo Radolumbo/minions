@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    <p>Welcome to <%= title %></p>
+    <p><a href="/matches/new">Create a match, you cretin</a>
+    <% for(var i in matches){ %>
+      <p><%- link_to(matches[i].gameType, 'matches/'+matches[i]._id) %></p>
+    <% } %>
+  </body>
+</html>

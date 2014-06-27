@@ -31,6 +31,7 @@ function setEventHandlers(){
 //what happens when a client connects
 function onSocketConnection(client){
 	util.log("New player has connectied: " + client.id);
+	client.emit("your id", client.id);
 	client.on("disconnect", onClientDisconnect);
 	client.on("new player", onNewPlayer);
 	client.on("move player", onMovePlayer);

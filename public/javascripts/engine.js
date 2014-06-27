@@ -2,7 +2,7 @@
 
 //Pre-define certain values
 var FIELD_SIZE = 800;
-var MAX_TILES = 10;
+var MAX_TILES = fieldLength; //From set Options
 var TILE_HEIGHT = FIELD_SIZE/MAX_TILES;
 var TILE_WIDTH = FIELD_SIZE/MAX_TILES;
 
@@ -14,7 +14,11 @@ var ctx; //The context of the canvas -- used to draw on the canvas
 var myTurn; //Is it my turn?
 var remotePlayer; //The opponent
 var localPlayer; //You
+//Based on IDs, are you "player1"? this is used for image rendering
+//e.g. player1 will have all "red" pieces and player2 will have all "green" pieces
+var playerNumber; 
 var pieces = []; // All the pieces on the board
+var freePlay = false;
 
 
 ///////////////////////////////////////////////////INITIALIZE///////////////////////////////////////////////////////
@@ -35,18 +39,26 @@ function initGame(){
 
   //Create the local player
   localPlayer = new Player(0); //I guess I'll use 0 as the ID for the local player for now, but I want it from the server
-  localPlayer.addMinion(new Minion("warrior", "images/warrior.png"));
-  localPlayer.getMinions()[0].image.onload = function(){ localPlayer.getMinions()[0].imageReady = true; };
-  //TODO:
-  pieces[pieces.length+1] = localPlayer.getMinions()[0]; //this does not work!! use a count variable instead 
-
-  //Set pieces
-  //TODO:
-  tiles[4][3].occupant = 1;
-  pieces[1].xTile = 4;
-  pieces[1].yTile = 3;
-
+  for(var i in pieceSet){
+    var newMinion = new Minion(pieceSet[i].image); //THIS IS BAD B/C YOU NEED TO ADD PLAYER NUMBER AND .PNG TO IMAGE FOR IT TO MAKE SENSE
+    newMinion.motionPattern = pieceSet[i].motionPattern;
+    newMinion.motionRange = pieceSet[i].motionRange;
+    localPlayer.addMinion(newMinion);
+    pieces[pieces.length] = newMinion; //Set the piece hash
+    tiles[pieceSet[i].startingX][pieceSet[i].startingY].occupant = pieces.length - 1; //Set the tile occupant
+    newMinion.xTile = pieceSet[i].startingX;
+    newMinion.yTile = pieceSet[i].startingY;
+  } 
   //Open connection AFTER generating player so we have something to send
+  //Also don't make a connection if we're doing free play, ya dig?
+  if(!freePlay)
+    connectToServer();
+
+}
+
+/////////////////////////////////////////CONNECTION/////////////////////////////////////////
+
+function connectToServer(){
   //TODO:
   //workaround for working between localhost and radolumbo TEMPORARY
   if(window.location=="http://localhost:3000/game"){
@@ -60,44 +72,43 @@ function initGame(){
   socket.on("new player", onNewPlayer);
   socket.on("move player", onMovePlayer);
   socket.on("remove player", onRemovePlayer);
-
+  socket.on("your id", function(data){localPlayer.id = data;}); //RECEIVE YOUR ID
 }
 
-/////////////////////////////////////////CONNECTION/////////////////////////////////////////
-
-
-function onSocketConnected() {
+function onSocketConnected(){
   socket.emit("new player", {"minions": extractMinions(localPlayer.getMinions())});
   console.log("Connected to socket server");
 };
 
-function onSocketDisconnect() {
+function onSocketDisconnect(){
   console.log("Disconnected from socket server");
 };
 
 //When the opponent connects TODO: todo: 
-function onNewPlayer(data) {
+function onNewPlayer(data){
   console.log("New player connected: "+data.id);
   var newPlayer = new Player(data.id);
   remotePlayer = newPlayer;
-  //Add all the minions that this player owns
+  //Determine whose turn it is
+  myTurn = !data.firstTurn;
+  //Determine who is player one and two
+  playerNumber = remotePlayer.id > localPlayer.id ? 1:2;
+
+  //now we can place the pieces on the board
+  //Our minions need to have their image source updated with the proper player number
+  for(var i in localPlayer.getMinions()){
+    localPlayer.getMinions()[i].image.src = pieceSet[i].image + playerNumber + ".png"; //bad workaround
+  }
+  //Opinion's minions
   for(var x in data.minions){
-    var newMinion = new Minion(data.minions[x].job, "images/"+data.minions[x].job+".png");
+    var newMinion = new Minion(data.minions[x].image + (3-playerNumber) + ".png"); //3 - playerNumber gives 2 for 1 and 1 for 2
     newMinion.xTile = (MAX_TILES-1) - data.minions[x].xTile;
     newMinion.yTile = (MAX_TILES-1) - data.minions[x].yTile;
     newMinion.mine = false;
-    //Make sure to set the onload function
-    newMinion.image.onload = function(){ newMinion.imageReady = true; };
     remotePlayer.addMinion(newMinion);
+    pieces[pieces.length] = newMinion; //Set the piece hash
+    tiles[newMinion.xTile][newMinion.yTile].occupant = pieces.length-1;
   }
-  //This is total bullshit right now just to force draw the new minions
-  var oppMinion = remotePlayer.getMinions()[0];
-  pieces[2] = oppMinion;
-  //Set pieces
-  tiles[oppMinion.xTile][oppMinion.yTile].occupant = 2;
-
-  //Determine whose turn it is
-  myTurn = !data.firstTurn;
   if(myTurn)
     document.getElementById("whoseTurn").innerHTML = 'YOUR TURN!';
   else
@@ -146,13 +157,13 @@ function render(){
   for(var i = 0; i < MAX_TILES; i++){
     for(var j = 0; j < MAX_TILES; j++){
       //If the tile is occupied, draw what is occupying it
-      if(tiles[i][j].occupant){
+      if(tiles[i][j].occupant > -1){
         var piece = pieces[tiles[i][j].occupant];
         //If this piece is being dragged, don't draw it
         if(drag.piece == piece){
           fillTile(i,j,"#FFFFFF"); //Just leave this spot empty
         }
-        else if(piece.imageReady){
+        else if(piece.image.ready){
 
           //If the piece is selected, highlight it and its range
           if(piece.selected){
@@ -225,14 +236,14 @@ function handleClick(e){
   if(!handleClick.midMove){
 
     //Select it! Set all static variables to know that a piece is currently selected 
-    if(tiles[xTile][yTile].occupant && pieces[tiles[xTile][yTile].occupant].mine){
+    if(tiles[xTile][yTile].occupant > -1 && pieces[tiles[xTile][yTile].occupant].mine){
       handleClick.midMove = true;
       handleClick.tile.x = xTile;
       handleClick.tile.y = yTile;
       handleClick.piece = selectPiece(xTile, yTile);
     }
     //There was a minion, but it's not yours. Still update the menu.
-    else if(tiles[xTile][yTile].occupant){
+    else if(tiles[xTile][yTile].occupant > -1){
       updateMenu(pieces[tiles[xTile][yTile].occupant]);
     }
   }
@@ -245,14 +256,16 @@ function handleClick(e){
       movePiece(handleClick.tile.x,handleClick.tile.y,xTile,yTile);
       //Send message that this piece was moved
       socket.emit("move player", {"x1": handleClick.tile.x, "y1": handleClick.tile.y, "x2": xTile, "y2": yTile});
+      deselectPiece(xTile, yTile);
       myTurn = false;
       document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
     }
     //Attempt an attack
     else if(isAttack && validMove(xTile,yTile,handleClick.piece.selectPattern(true),true)){
       //There's a target
-      if(tiles[xTile][yTile].occupant && !(xTile == handleClick.tile.x && yTile == handleClick.tile.y)){
+      if(tiles[xTile][yTile].occupant > -1 && !(xTile == handleClick.tile.x && yTile == handleClick.tile.y)){
         attackMinion(handleClick.piece,pieces[tiles[xTile][yTile].occupant]);
+        deselectPiece(handleClick.tile.x, handleClick.tile.y)
         myTurn = false;
         document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
       }
@@ -304,13 +317,13 @@ function handleMouseDown(e){
   var yTile = Math.floor(MAX_TILES*drag.y/FIELD_SIZE);
 
   //If a minion is in the tile you just clicked
-  if(tiles[xTile][yTile].occupant && pieces[tiles[xTile][yTile].occupant].mine){
+  if(tiles[xTile][yTile].occupant >-1 && pieces[tiles[xTile][yTile].occupant].mine){
     canvas.addEventListener("mousemove", handleMouseMove, false);
     drag.piece = selectPiece(xTile, yTile);
     drag.active = true;
   }
   //It's a minion, but it ain't yours. Still, show info in menu.
-  else if(tiles[xTile][yTile].occupant){
+  else if(tiles[xTile][yTile].occupant > -1){
       updateMenu(pieces[tiles[xTile][yTile].occupant]);
   }
 
@@ -334,6 +347,7 @@ function handleMouseUp(e){
       //since click events check to see how much time passed from mousedown.
       drag.timestamp = -1;
       //Turn's over, boys
+      console.log("my bad");
       myTurn = false;
       document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
     }
@@ -347,7 +361,6 @@ function handleMouseUp(e){
   drag.y = -1;
   drag.active = false;
   canvas.removeEventListener("mousemove", handleMouseMove, false);
-
 
 }
 
@@ -415,30 +428,14 @@ function deselectPiece(x,y){
   updateMenu(null);
 }
 
-//Move a piece from x1,y1 to x2,y2
-function movePiece(x1,y1,x2,y2){
-  var temp = tiles[x1][y1].occupant; //temp holds the number of the selected piece
-  //Piece is no longer selected
-  deselectPiece(x1, y1);
-    //Clear previously occupied tile
-  fillTile(x1,y1,"#FFFFFF") //I think we can get rid of this stuff.
-  //Fill in now occupied tile
-  fillTile(x2,y2,"#000000");
-  //Update the Minion with its new location
-  pieces[temp].xTile = x2;
-  pieces[temp].yTile = y2;
-  //Update the tiles with their new occupants
-  tiles[x1][y1].occupant = 0;
-  tiles[x2][y2].occupant = temp;
-  //Turn is over!
-}
+////////////////THE FOLLOWING THREE FUNCTIONS WILL ALTER DRASTICALLY FROM GAME TO GAME////////////////////////
 
 //Check if [x,y] is in validTiles
 function validMove(x,y,validTiles,isAttack){
   //For motion:
   if(!isAttack){
-    //If it's occupied, you can't move there!
-    if(tiles[x][y].occupant)
+    //If it's occupied, you can't move there!... unless moving is attack.. but even if movingIsAttack, you still can't hit your own minions
+    if(tiles[x][y].occupant > -1 && (!moveIsAttack || pieces[tiles[x][y].occupant].mine))
       return false;
 
     for(var index in validTiles){
@@ -456,18 +453,36 @@ function validMove(x,y,validTiles,isAttack){
   return false;
 }
 
+//Move a piece from x1,y1 to x2,y2
+function movePiece(x1,y1,x2,y2){
+  var mover = tiles[x1][y1].occupant; //mover holds the number of the selected piece
+
+  //If move is attack on, and there's a target, ATTACK IT
+  if(moveIsAttack && tiles[x2][y2].occupant > -1){
+    attackMinion(pieces[mover],pieces[tiles[x2][y2].occupant])
+  }
+
+ 
+  //Update the Minion with its new location
+  pieces[mover].xTile = x2;
+  pieces[mover].yTile = y2;
+  //Update the tiles with their new occupants
+  tiles[x1][y1].occupant = -1;
+  tiles[x2][y2].occupant = mover;
+  //Turn is over!
+}
+
 //What happens when a minion attacks?
 function attackMinion(aggressor, defender){
   defender.HP = defender.HP - aggressor.attack;
   //The minion dies
   if(defender.HP <= 0){
-    tiles[defender.xTile][defender.yTile].occupant = 0;
+    tiles[defender.xTile][defender.yTile].occupant = -1;
     defender.x = -1;
     defender.y = -1;
     defender.alive = false;
 
   }
-  deselectPiece(aggressor.xTile, aggressor.yTile);
 }
 
 //////////////////////////////////////////////////////////UI INTERACTIONS////////////////////////////////////////////////////////////////////

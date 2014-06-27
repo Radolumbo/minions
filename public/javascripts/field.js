@@ -28,7 +28,7 @@ function Tile(x,y){
   this.access = true;
 
   //Who is occupying this tile?
-  this.occupant = 0;
+  this.occupant = -1;
 
 }
 

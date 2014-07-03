@@ -41,8 +41,8 @@ function initGame(){
   localPlayer = new Player(0); //I guess I'll use 0 as the ID for the local player for now, but I want it from the server
   for(var i in pieceSet){
     var newMinion = new Minion(pieceSet[i].image); //THIS IS BAD B/C YOU NEED TO ADD PLAYER NUMBER AND .PNG TO IMAGE FOR IT TO MAKE SENSE
-    newMinion.motionPattern = pieceSet[i].motionPattern;
-    newMinion.motionRange = pieceSet[i].motionRange;
+    newMinion.motion = pieceSet[i].motion;
+    newMinion.job = pieceSet[i].job;
     localPlayer.addMinion(newMinion);
     pieces[pieces.length] = newMinion; //Set the piece hash
     tiles[pieceSet[i].startingX][pieceSet[i].startingY].occupant = pieces.length - 1; //Set the tile occupant
@@ -73,6 +73,7 @@ function connectToServer(){
   socket.on("move player", onMovePlayer);
   socket.on("remove player", onRemovePlayer);
   socket.on("your id", function(data){localPlayer.id = data;}); //RECEIVE YOUR ID
+  socket.on("piece change", onPieceChange)
 }
 
 function onSocketConnected(){
@@ -92,7 +93,7 @@ function onNewPlayer(data){
   //Determine whose turn it is
   myTurn = !data.firstTurn;
   //Determine who is player one and two
-  playerNumber = remotePlayer.id > localPlayer.id ? 1:2;
+  playerNumber = myTurn ? 1:2;
 
   //now we can place the pieces on the board
   //Our minions need to have their image source updated with the proper player number
@@ -105,6 +106,7 @@ function onNewPlayer(data){
     newMinion.xTile = (MAX_TILES-1) - data.minions[x].xTile;
     newMinion.yTile = (MAX_TILES-1) - data.minions[x].yTile;
     newMinion.mine = false;
+    newMinion.job = data.minions[x].job;
     remotePlayer.addMinion(newMinion);
     pieces[pieces.length] = newMinion; //Set the piece hash
     tiles[newMinion.xTile][newMinion.yTile].occupant = pieces.length-1;
@@ -113,6 +115,12 @@ function onNewPlayer(data){
     document.getElementById("whoseTurn").innerHTML = 'YOUR TURN!';
   else
     document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
+
+  //Start up the special rule checks!
+  setInterval(checkSpecialRules, 30);
+
+  //Hide the waiting modal
+  $("#waitingModal").modal("hide");
 
 };
 
@@ -134,6 +142,15 @@ function onRemovePlayer(data) {
   alert("The opponet left! What a dick!");
   remotePlayer = null;
 };
+
+//Handle an event where a piece changes without moving or attack
+function onPieceChange(data){
+  console.log(data);
+  //The image is being changed
+  if(data.image){
+    pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].image.src = data.image;
+  }
+}
 
 /////////////////////////////////////////CANVAS///////////////////////////////////////
 
@@ -347,7 +364,6 @@ function handleMouseUp(e){
       //since click events check to see how much time passed from mousedown.
       drag.timestamp = -1;
       //Turn's over, boys
-      console.log("my bad");
       myTurn = false;
       document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
     }
@@ -428,8 +444,6 @@ function deselectPiece(x,y){
   updateMenu(null);
 }
 
-////////////////THE FOLLOWING THREE FUNCTIONS WILL ALTER DRASTICALLY FROM GAME TO GAME////////////////////////
-
 //Check if [x,y] is in validTiles
 function validMove(x,y,validTiles,isAttack){
   //For motion:
@@ -474,7 +488,7 @@ function movePiece(x1,y1,x2,y2){
 
 //What happens when a minion attacks?
 function attackMinion(aggressor, defender){
-  defender.HP = defender.HP - aggressor.attack;
+  defender.HP = defender.HP - aggressor.attackValue;
   //The minion dies
   if(defender.HP <= 0){
     tiles[defender.xTile][defender.yTile].occupant = -1;
@@ -492,7 +506,14 @@ function updateMenu(minion){
     document.getElementById("selectedPiece").innerHTML = "NOTHING SELECTED";
     return;
   }
-  document.getElementById("selectedPiece").innerHTML = "Job: " + minion.job + "<br>"
-                                                     + "Movement range: " + minion.motionRange + "<br>"
-                                                     + "Attack range: " + minion.attackRange;
+  document.getElementById("selectedPiece").innerHTML = "Job: " + minion.job;
+}
+
+/////////////////////////////////////////////////"SPECIAL RULE THING"///////////////////////////////////////////////////////////////
+
+function checkSpecialRules(){
+  //Run all the special rule functions
+  for(var i in specialRules){
+    specialRules[i]();
+  }
 }

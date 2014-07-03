@@ -2,10 +2,12 @@
 <html>
   <head>
     <title><%= title %></title>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> 
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
     <link rel='stylesheet' href='/stylesheets/game.css' />
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> 
     <link rel="stylesheet" href="/stylesheets/jquery-ui-1.10.4.custom.css" />
-    <script src="/javascripts/jquery-ui-1.10.4.custom.js"></script>
+    <script src="/javascripts/jquery-ui-1.10.4.custom.js"></script><!-- Latest compiled and minified CSS -->
   </head>
   <body>
     <div id="app">
@@ -50,8 +52,19 @@
       $(function(){
         initGame();
         setInterval(render,30);
+        $("#waitingModal").modal("show");
       });
     </script>
-
+    <div id="modals">
+      <div class="modal fade" id="waitingModal" tabindex="-1" role="dialog" aria-labelledby="waitingModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-body">
+              Waiting for opponent...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

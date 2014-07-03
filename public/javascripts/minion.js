@@ -8,13 +8,12 @@ function Minion(image, job){
 
 
 	//Moving pattern
-	this.motionPattern = "radial";
-	this.motionRange = 1;
+	this.motion = null;
 
 	//Attack pattern
-	this.attackPattern = "teleport";
-	this.attackRange = 1;
-	this.attack = 1;
+	this.attack = null;
+
+	this.attackValue = 1;
 
 	//job
 	this.job = job;
@@ -98,6 +97,14 @@ function clearPattern(isAttack){
 
 //Given a minion, find the attack or motion pattern
 function selectPattern(isAttack){
+	//Right now, the render function clears the attack pattern and then renders the motion pattern constantly for when motion is selected
+	//This is done in case you switch between the two, it will clear out the one no longer selected
+	//So this is a work around for minions that don't have an attack pattern defined, for now:
+	if(!isAttack || this.attack == undefined){
+		return this.motion();
+	}
+	return this.attack();
+	/*
 	var validTiles = [];
 	//Extract necessary data from the minion
 	var pattern = isAttack ? this.attackPattern : this.motionPattern;
@@ -272,14 +279,14 @@ function selectPattern(isAttack){
         //
 	}
 	return validTiles;
-
+*/
 }
 
 //Convert the minions to something that can be sent over a socket
 function extractMinions(minions){
 	var simpleMinions = [];
 	for(var x in minions){
-		simpleMinions.push({"image": minions[x].image.src, "xTile": minions[x].xTile, "yTile": minions[x].yTile});
+		simpleMinions.push({"image": minions[x].image.src, "xTile": minions[x].xTile, "yTile": minions[x].yTile, "job": minions[x].job});
 	}
 	return simpleMinions;
 }

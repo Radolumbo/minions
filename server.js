@@ -35,6 +35,7 @@ function onSocketConnection(client){
 	client.on("disconnect", onClientDisconnect);
 	client.on("new player", onNewPlayer);
 	client.on("move player", onMovePlayer);
+	client.on("piece change", onPieceChange);
 
 }
 
@@ -88,6 +89,11 @@ function onMovePlayer(data) {
 	minion.yTile = data.y2;
 	this.broadcast.emit("move player", {"x1": data.x1, "y1": data.y1, "x2": data.x2, "y2": data.y2});
 };
+
+//All you need to do is forward the data to the other client
+function onPieceChange(data){
+	this.broadcast.emit("piece change", data);
+}
 
 function playerById(id){
 	for(var i = 0; i < players.length; i++){

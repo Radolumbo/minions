@@ -7,7 +7,7 @@ var mongoUri = process.env.MONGOHQ_URL ||
 //Connect to mongo
 var mongo = require('mongodb');
 var monk = require('monk');
-var db = monk('localhost:27017/minions');
+var db = monk(mongoUri);
 
 
 /* GET matches page. */

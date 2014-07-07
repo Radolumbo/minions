@@ -1,1 +1,73 @@
-hey girl hey
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> 
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <link rel='stylesheet' href='/stylesheets/game.css' />
+    <link rel="stylesheet" href="/stylesheets/jquery-ui-1.10.4.custom.css" />
+    <script src="/javascripts/jquery-ui-1.10.4.custom.js"></script><!-- Latest compiled and minified CSS -->
+  </head>
+  <body>
+    <div id="app">
+      <h1 id="whoseTurn">GAME HAS NOT STARTED!!</h1>
+      <div id="wrapper">
+      </div>
+      <div id="menu">
+        <p>Selected piece:</p><p id="selectedPiece">NOTHING SELECTED</p>
+        <form>
+          <fieldset>
+            <legend>Action</legend>
+            <div id="actionChoice">
+              <input type="radio" id="moveButton" name="action" checked="checked">
+              <label for="moveButton">Move</label>
+         
+              <input type="radio" id="attackButton" name="action">
+              <label for="attackButton">Attack</label>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      $(function() {
+        $( "#actionChoice" ).buttonset();
+      });
+    </script>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="/javascripts/options.js"></script> <!-- set options BEFORE including other things!!! -->
+    <script type="text/javascript">
+      setOptions("chess");
+    </script>
+    <script type="text/javascript" src="/javascripts/minion.js"></script>
+    <script type="text/javascript" src="/javascripts/player.js"></script>
+    <script type="text/javascript" src="/javascripts/field.js"></script>
+    <script type="text/javascript" src="/javascripts/engine.js"></script>
+
+    <script type="text/javascript">
+
+      $(function(){
+        initGame();
+        setInterval(render,30);
+        //Join the right match
+        socket.emit("join room", {"room": window.location.pathname.split('/').pop()});
+        socket.emit("new player", {"minions": extractMinions(localPlayer.getMinions())});
+        $("#waitingModal").modal("show");
+      });
+    </script>
+    <div id="modals">
+      <div class="modal fade" id="waitingModal" tabindex="-1" role="dialog" aria-labelledby="waitingModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-body">
+              Waiting for opponent...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

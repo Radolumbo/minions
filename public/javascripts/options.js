@@ -62,26 +62,26 @@ var chessSet = {
 	"moveIsAttack": true,
 	"placeMinions": false,
 	"pieces": {
-		0: {motion: pawnMoveFunction, job: "pawn", image: "images/chess/pawn", startingX: 0, startingY: 6}, //pawn
-		1: {motion: pawnMoveFunction, job: "pawn", image: "images/chess/pawn", startingX: 1, startingY: 6}, //pawn
-		2: {motion: pawnMoveFunction, job: "pawn", image: "images/chess/pawn", startingX: 2, startingY: 6}, //pawn
-		3: {motion: pawnMoveFunction, job: "pawn", image: "images/chess/pawn", startingX: 3, startingY: 6}, //pawn
-		4: {motion: pawnMoveFunction, job: "pawn", image: "images/chess/pawn", startingX: 4, startingY: 6}, //pawn
-		5: {motion: pawnMoveFunction, job: "pawn", image: "images/chess/pawn", startingX: 5, startingY: 6}, //pawn
-		6: {motion: pawnMoveFunction, job: "pawn", image: "images/chess/pawn", startingX: 6, startingY: 6}, //pawn
-		7: {motion: pawnMoveFunction, job: "pawn", image: "images/chess/pawn", startingX: 7, startingY: 6}, //pawn
-		8: {motion: rookMoveFunction, job: "rook", image: "images/chess/rook", startingX: 0, startingY: 7}, //rook
-		9: {motion: rookMoveFunction, job: "rook", image: "images/chess/rook", startingX: 7, startingY: 7}, //rook
-		10: {motion: knightMoveFunction, job: "knight", image: "images/chess/knight", startingX: 1, startingY: 7}, //knight
-		11: {motion: knightMoveFunction, job: "knight", image: "images/chess/knight", startingX: 6, startingY: 7}, //knight
-		12: {motion: bishopMoveFunction, job: "bishop", image: "images/chess/bishop", startingX: 2, startingY: 7}, //bishop
-		13: {motion: bishopMoveFunction, job: "bishop", image: "images/chess/bishop", startingX: 5, startingY: 7}, //bishop
-		14: {motion: kingMoveFunction, job: "king", image: "images/chess/king", startingX: 4, startingY: 7}, //king
-		15: {motion: queenMoveFunction, job: "queen", image: "images/chess/queen", startingX: 3, startingY: 7} //queen
+		0: {motion: pawnMoveFunction, job: "pawn", image: "/images/chess/pawn", startingX: 0, startingY: 6}, //pawn
+		1: {motion: pawnMoveFunction, job: "pawn", image: "/images/chess/pawn", startingX: 1, startingY: 6}, //pawn
+		2: {motion: pawnMoveFunction, job: "pawn", image: "/images/chess/pawn", startingX: 2, startingY: 6}, //pawn
+		3: {motion: pawnMoveFunction, job: "pawn", image: "/images/chess/pawn", startingX: 3, startingY: 6}, //pawn
+		4: {motion: pawnMoveFunction, job: "pawn", image: "/images/chess/pawn", startingX: 4, startingY: 6}, //pawn
+		5: {motion: pawnMoveFunction, job: "pawn", image: "/images/chess/pawn", startingX: 5, startingY: 6}, //pawn
+		6: {motion: pawnMoveFunction, job: "pawn", image: "/images/chess/pawn", startingX: 6, startingY: 6}, //pawn
+		7: {motion: pawnMoveFunction, job: "pawn", image: "/images/chess/pawn", startingX: 7, startingY: 6}, //pawn
+		8: {motion: rookMoveFunction, job: "rook", image: "/images/chess/rook", startingX: 0, startingY: 7}, //rook
+		9: {motion: rookMoveFunction, job: "rook", image: "/images/chess/rook", startingX: 7, startingY: 7}, //rook
+		10: {motion: knightMoveFunction, job: "knight", image: "/images/chess/knight", startingX: 1, startingY: 7}, //knight
+		11: {motion: knightMoveFunction, job: "knight", image: "/images/chess/knight", startingX: 6, startingY: 7}, //knight
+		12: {motion: bishopMoveFunction, job: "bishop", image: "/images/chess/bishop", startingX: 2, startingY: 7}, //bishop
+		13: {motion: bishopMoveFunction, job: "bishop", image: "/images/chess/bishop", startingX: 5, startingY: 7}, //bishop
+		14: {motion: kingMoveFunction, job: "king", image: "/images/chess/king", startingX: 4, startingY: 7}, //king
+		15: {motion: queenMoveFunction, job: "queen", image: "/images/chess/queen", startingX: 3, startingY: 7} //queen
 	},
 	"fieldWidth": 8,
 	"fieldLength": 8,
-	"specialRules": [pawnPromotionRule, kingPositionRule]
+	"specialRules": [pawnPromotionRule, kingPositionRule, castleRule, castleRookMove, checkRule, checkmateRule]
 };
 
 var minionsSet = {
@@ -124,7 +124,7 @@ function pawnPromotionRule(){
 //Supplement to above function
 function promotePawn(x,y,job){
 	pieces[tiles[x][0].occupant].job = job;
-  pieces[tiles[x][0].occupant].image.src = "images/chess/" + job + playerNumber + ".png"; //bad workaround
+  pieces[tiles[x][0].occupant].image.src = "/images/chess/" + job + playerNumber + ".png"; //bad workaround
   if(job=="queen"){
   	pieces[tiles[x][0].occupant].motion = queenMoveFunction;
   }
@@ -145,11 +145,115 @@ function promotePawn(x,y,job){
 
 //Rule for kings starting in different positions
 function kingPositionRule(){
+	//have it run only once
+	if(kingPositionRule.ran == undefined){
+		kingPositionRule.ran = true;
+		//Only do it as second player
+		if(playerNumber == 2){
+			console.log(playerNumber);
+			//swamp the queen and king
+			pieces[tiles[4][7].occupant].job = "queen";
+			pieces[tiles[4][7].occupant].image.src = "/images/chess/queen2.png";
+			pieces[tiles[4][7].occupant].motion = queenMoveFunction;
+			pieces[tiles[3][7].occupant].job = "king";
+			pieces[tiles[3][7].occupant].image.src = "/images/chess/king2.png";
+			pieces[tiles[3][7].occupant].motion = kingMoveFunction;
+			pieceSet[14].startingX = 3; //Need to record where the king started for castling
+			//Because I automatically invert which 
+  		socket.emit("piece change", {"x": 4, "y": 7, "image": pieces[tiles[4][7].occupant].image.src, "job": "queen"});
+  		socket.emit("piece change", {"x": 3, "y": 7, "image": pieces[tiles[3][7].occupant].image.src, "job": "king"});
+  	}
+	}
+}
+
+//Basically, if any of the piece's starting points is empty for even a split second, 
+//That means they moved
+function castleRule(){
+	//Have to split it up by player number b/c of different king starting positions--king of hacky, but
+	if(playerNumber == 1){
+		if(tiles[4][7].occupant == -1){
+			kingMoveFunction.hasMoved = true;
+		}
+	}
+	else{
+		if(tiles[3][7].occupant == -1){
+			kingMoveFunction.hasMoved = true;
+		}
+	}
+
+	if(tiles[0][7].occupant == -1){
+		kingMoveFunction.leftRookMoved = true;
+	}
+
+	if(tiles[7][7].occupant == -1){
+		kingMoveFunction.rightRookMoved = true;
+	}
+}
+
+//Supplement to the castle rule that figures out when the king castles and moves the rook appropriately
+//Basically checks to see if the king jumped 2 spaces or not, if it moves anywhere else, cant castle ever
+function castleRookMove(){
+	//See if you can stil lcastle
+	if(castleRookMove.cantCastle == true){
+		return;
+	}
+
+	//King starting position based on player number
+	if(playerNumber == 1){
+		//King is still just chillin
+		if(tiles[4][7].occupant > -1 && pieces[tiles[4][7].occupant].job == "king")
+			return;
+		//King just castled left
+		else if(tiles[2][7].occupant > -1 && pieces[tiles[2][7].occupant].job == "king"){
+			//Move the rook
+			movePiece(0, 7, 3, 7);
+      socket.emit("move player", {"x1": 0, "y1": 7, "x2": 3, "y2": 7});
+			castleRookMove.cantCastle = true;
+		}
+		//King just castled right
+		else if(tiles[6][7].occupant > -1 && pieces[tiles[6][7].occupant].job == "king"){
+			//Move the rook
+			movePiece(7, 7, 5, 7);
+      socket.emit("move player", {"x1": 7, "y1": 7, "x2": 5, "y2": 7});
+			castleRookMove.cantCastle = true;
+		}
+		//King moved elsewhere, can't castle ever again
+		else{
+			castleRookMove.cantCastle = true;
+		}
+	}
+	else{
+		//King is still just chillin
+		if(tiles[3][7].occupant > -1 && pieces[tiles[3][7].occupant].job == "king")
+			return;
+		//King castled left
+		else if(tiles[1][7].occupant > -1 && pieces[tiles[1][7].occupant].job == "king"){
+			//Move the rook
+			movePiece(0, 7, 2, 7);
+      socket.emit("move player", {"x1": 0, "y1": 7, "x2": 2, "y2": 7});
+			castleRookMove.cantCastle = true;
+		}
+		//King castled right
+		else if(tiles[5][7].occupant > -1 && pieces[tiles[5][7].occupant].job == "king"){
+			//Move the rook
+			movePiece(7, 7, 4, 7);
+      socket.emit("move player", {"x1": 7, "y1": 7, "x2": 4, "y2": 7});
+			castleRookMove.cantCastle = true;
+		}
+		//King moved elsewhere, can't castle ever again
+		else{
+			castleRookMove.cantCastle = true;
+		}
+	}
+}
+
+//Game over, bub
+function checkmateRule(){
 
 }
 
-//See if the rooks or kings have moved yet
-function castleRule(){
+//Can't move through this shit
+function checkRule(){
 
 }
 
@@ -295,8 +399,11 @@ function queenMoveFunction(){
 
 function kingMoveFunction(){
 
+	//This is to determine if you're allowed to castle;
 	if(kingMoveFunction.hasMoved == undefined){
 		kingMoveFunction.hasMoved = false;
+		kingMoveFunction.leftRookMoved = false;
+		kingMoveFunction.rightRookMoved = false;
 	}
 
 	var validTiles = [];
@@ -311,5 +418,29 @@ function kingMoveFunction(){
 	}
 
 	//Castling!
+	//Based on player number, make sure all the spaces between the rook and king are empty
+	if(!kingMoveFunction.hasMoved){
+		if(!kingMoveFunction.leftRookMoved){
+			if(playerNumber == 1){
+				if(tiles[1][7].occupant == -1 && tiles[2][7].occupant == -1 && tiles[3][7].occupant == -1)
+					validTiles.push([2,7]);
+			}
+			else{
+				if(tiles[1][7].occupant == -1 && tiles[2][7].occupant == -1)
+					validTiles.push([1,7]);
+			}
+		}
+		if(!kingMoveFunction.rightRookMoved){
+			if(playerNumber == 1){
+				if(tiles[5][7].occupant == -1 && tiles[6][7].occupant == -1)
+					validTiles.push([6,7]);
+			}
+			else{
+				if(tiles[4][7].occupant == -1 && tiles[5][7].occupant == -1 && tiles[6][7].occupant == -1)
+					validTiles.push([5,7]);
+			}
+		}
+	}
+
   return validTiles;
 }

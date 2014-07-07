@@ -3,16 +3,13 @@
   <head>
     <title><%= title %></title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
-     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> 
-    <link rel="stylesheet" href="/stylesheets/jquery-ui-1.10.4.custom.css" />
-    <script src="/javascripts/jquery-ui-1.10.4.custom.js"></script>
   </head>
   <body>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
     <p><a href="/matches/new">Create a match, you cretin</a>
     <% for(var i in matches){ %>
-      <p><%- link_to(matches[i].gameType, 'matches/'+matches[i]._id) %></p>
+      <p><%- link_to(matches[i].gameType, '/matches/'+matches[i]._id) %></p>
     <% } %>
   </body>
 </html>

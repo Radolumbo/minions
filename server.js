@@ -6,13 +6,13 @@ var io;
 
 var socket;
 var pieces;
-var players;
+var matchToPlayers; //hash room id to player list
 var turn; //whose turn is it!
 
 //Initialize server
 function init(server){
 	pieces = [];
-	players = [];
+	matchToPlayers = {};
 
 	io = socketio.listen(server);
 
@@ -36,18 +36,26 @@ function onSocketConnection(client){
 	client.on("new player", onNewPlayer);
 	client.on("move player", onMovePlayer);
 	client.on("piece change", onPieceChange);
+	client.on("join room", onJoinRoom);
+}
 
+//Join the room they want
+function onJoinRoom(data){
+	this.room = data.room;
+	this.join(data.room);
+	util.log("Player " + this.id + " has joined room " + JSON.stringify(this.room));
 }
 
 //When a client disconnects, destroy their player object
 function onClientDisconnect() {
-	var removePlayer = playerById(this.id);
+	var removePlayer = playerById(this.id,this.room);
+	var players= matchToPlayers[this.room];
 	if(!removePlayer){
 		util.log("Player not found while trying to remove " + this.id);
 		return;
 	}
 	players.splice(players.indexOf(removePlayer),1);
-	this.broadcast.emit("remove player", {id:this.id});
+	this.broadcast.to(this.room).emit("remove player", {id:this.id});
   util.log("Player has disconnected: "+this.id);
 };
 
@@ -56,7 +64,10 @@ function onNewPlayer(data) {
 	
 	//associate the client id with the player id, makes things simple
 	var newPlayer = new Player(this.id);
+	if(matchToPlayers[this.room] == undefined)
+		matchToPlayers[this.room] = [];
 
+	var players = matchToPlayers[this.room];
 		//Pick the person whose turn it is to start once there's two players
 		//Players.length should be = 1 because that means one person has already connected
 		//and the second person is connecting now. We don't push this player until the end.
@@ -68,7 +79,7 @@ function onNewPlayer(data) {
 	}
 	newPlayer.minions = data.minions;
 	//Send the new player to all existing players
-	this.broadcast.emit("new player", {"id": newPlayer.id, "minions": newPlayer.minions, "firstTurn": newPlayer.id==turn});
+	this.broadcast.to(this.room).emit("new player", {"id": newPlayer.id, "minions": newPlayer.minions, "firstTurn": newPlayer.id==turn});
 	var existingPlayer;
 	//Send all existing players to this new player
 	for(i = 0; i < players.length; i++){
@@ -84,18 +95,19 @@ function onNewPlayer(data) {
 
 //When a move is made
 function onMovePlayer(data) {
-	var minion = minionByXYandID(data.x1, data.y1, this.id);
+	var minion = minionByXYandID(data.x1, data.y1, this.id, this.room);
 	minion.xTile = data.x2;
 	minion.yTile = data.y2;
-	this.broadcast.emit("move player", {"x1": data.x1, "y1": data.y1, "x2": data.x2, "y2": data.y2});
+	this.broadcast.to(this.room).emit("move player", {"x1": data.x1, "y1": data.y1, "x2": data.x2, "y2": data.y2});
 };
 
 //All you need to do is forward the data to the other client
 function onPieceChange(data){
-	this.broadcast.emit("piece change", data);
+	this.broadcast.to(this.room).emit("piece change", data);
 }
 
-function playerById(id){
+function playerById(id, match){
+	var players = matchToPlayers[match];
 	for(var i = 0; i < players.length; i++){
 		if(players[i].id == id)
 			return players[i];
@@ -103,8 +115,8 @@ function playerById(id){
 	return false;
 }
 
-function minionByXYandID(x,y,id){
-	var player = playerById(id);
+function minionByXYandID(x,y,id,match){
+	var player = playerById(id,match);
 	for(var i in player.minions){
 		if(x == player.minions[i].xTile && y == player.minions[i].yTile)
 			return player.minions[i];

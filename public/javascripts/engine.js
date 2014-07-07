@@ -61,7 +61,7 @@ function initGame(){
 function connectToServer(){
   //TODO:
   //workaround for working between localhost and radolumbo TEMPORARY
-  if(window.location=="http://localhost:3000/game"){
+  if(window.location.host=="localhost:3000"){
     socket = io.connect("http://localhost", {port: 3000, transports: ["websocket"]});
   }
   else{
@@ -77,7 +77,7 @@ function connectToServer(){
 }
 
 function onSocketConnected(){
-  socket.emit("new player", {"minions": extractMinions(localPlayer.getMinions())});
+  
   console.log("Connected to socket server");
 };
 
@@ -145,11 +145,13 @@ function onRemovePlayer(data) {
 
 //Handle an event where a piece changes without moving or attack
 function onPieceChange(data){
-  console.log(data);
   //The image is being changed
-  if(data.image){
+  if(data.image)
     pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].image.src = data.image;
-  }
+  //The job is being changed
+  if(data.job)
+    pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].job = data.job;
+
 }
 
 /////////////////////////////////////////CANVAS///////////////////////////////////////
@@ -488,6 +490,8 @@ function movePiece(x1,y1,x2,y2){
 
 //What happens when a minion attacks?
 function attackMinion(aggressor, defender){
+  if(aggressor == undefined || defender == undefined)
+    return false;
   defender.HP = defender.HP - aggressor.attackValue;
   //The minion dies
   if(defender.HP <= 0){

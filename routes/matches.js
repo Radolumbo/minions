@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 var mongoUri = process.env.MONGOHQ_URL ||
-								"localhost:27017/minions");
+								"localhost:27017/minions";
 
 //Connect to mongo
 var mongo = require('mongodb');

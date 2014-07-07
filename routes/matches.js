@@ -29,13 +29,13 @@ router.get('/new', function(req, res){
 /*Post a matches page, this creates a new match*/
 router.post('/', function(req, res){
 	var matches = db.get('matches');
-	var gameType = req.body.matchName;
+	var matchName = req.body.matchName;
 	matches.insert({
-		"gameType": gameType
+		"matchName": matchName
 	}, function(err, doc){
 		if(err){
 			//Return error
-			res.send("Something went wrong. Woops.");
+			res.send("Something went wrong. Woops. Tell me: shmozer@gmail.com");
 		}
 		else{
 			res.location("matches/" + doc._id);

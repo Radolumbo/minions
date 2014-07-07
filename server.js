@@ -9,6 +9,14 @@ var pieces;
 var matchToPlayers; //hash room id to player list
 var turn; //whose turn is it!
 
+var mongoUri = process.env.MONGOHQ_URL ||
+								"localhost:27017/minions";
+
+//Connect to mongo
+var mongo = require('mongodb');
+var monk = require('monk');
+var db = monk(mongoUri);
+
 //Initialize server
 function init(server){
 	pieces = [];
@@ -56,6 +64,12 @@ function onClientDisconnect() {
 	}
 	players.splice(players.indexOf(removePlayer),1);
 	this.broadcast.to(this.room).emit("remove player", {id:this.id});
+
+	//Both players are gone, remove it from the hash
+	if(players.length == 0){
+		delete matchToPlayers[this.room];
+	}
+
   util.log("Player has disconnected: "+this.id);
 };
 
@@ -64,8 +78,18 @@ function onNewPlayer(data) {
 	
 	//associate the client id with the player id, makes things simple
 	var newPlayer = new Player(this.id);
+	//This is the first person to connect
 	if(matchToPlayers[this.room] == undefined)
 		matchToPlayers[this.room] = [];
+	//This is the second person to connect, remove match from DB
+	else{
+		var matches = db.get('matches');
+		matches.remove({ _id : this.room}, function (err) {
+			if(err){
+				util.log("Failed to remove match " + this.room)
+			}
+		});
+	}
 
 	var players = matchToPlayers[this.room];
 		//Pick the person whose turn it is to start once there's two players

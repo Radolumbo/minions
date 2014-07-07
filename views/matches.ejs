@@ -9,7 +9,7 @@
     <p>Welcome to <%= title %></p>
     <p><a href="/matches/new">Create a match, you cretin</a>
     <% for(var i in matches){ %>
-      <p><%- link_to(matches[i].gameType, '/matches/'+matches[i]._id) %></p>
+      <p><%- link_to(matches[i].matchName, '/matches/'+matches[i]._id) %></p>
     <% } %>
   </body>
 </html>

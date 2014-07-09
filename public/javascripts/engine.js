@@ -107,6 +107,7 @@ function onNewPlayer(data){
     newMinion.yTile = (MAX_TILES-1) - data.minions[x].yTile;
     newMinion.mine = false;
     newMinion.job = data.minions[x].job;
+    eval("newMinion.motion = " + data.minions[x].motion); //motion is sent over as a string, its dumb, oh well
     remotePlayer.addMinion(newMinion);
     pieces[pieces.length] = newMinion; //Set the piece hash
     tiles[newMinion.xTile][newMinion.yTile].occupant = pieces.length-1;
@@ -151,6 +152,9 @@ function onPieceChange(data){
   //The job is being changed
   if(data.job)
     pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].job = data.job;
+  //Motion is being changed
+  if(data.motion)
+    eval("pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].motion = " + data.motion);
 
 }
 
@@ -272,36 +276,48 @@ function handleClick(e){
     var isAttack = document.getElementById("attackButton").checked;
     //Move the piece
     if(!isAttack && validMove(xTile,yTile,handleClick.piece.selectPattern(false),false)){
-      movePiece(handleClick.tile.x,handleClick.tile.y,xTile,yTile);
+      var successfulMove = movePiece(handleClick.tile.x,handleClick.tile.y,xTile,yTile);
       //Send message that this piece was moved
-      socket.emit("move player", {"x1": handleClick.tile.x, "y1": handleClick.tile.y, "x2": xTile, "y2": yTile});
-      deselectPiece(xTile, yTile);
-      myTurn = false;
-      document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
+      if(successfulMove){
+        socket.emit("move player", {"x1": handleClick.tile.x, "y1": handleClick.tile.y, "x2": xTile, "y2": yTile});
+        deselectPiece(xTile, yTile);
+        myTurn = !successfulMove; //Only surrender turn if move was successful
+        document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
+      }
     }
     //Attempt an attack
     else if(isAttack && validMove(xTile,yTile,handleClick.piece.selectPattern(true),true)){
       //There's a target
       if(tiles[xTile][yTile].occupant > -1 && !(xTile == handleClick.tile.x && yTile == handleClick.tile.y)){
-        attackMinion(handleClick.piece,pieces[tiles[xTile][yTile].occupant]);
+        var successfulMove = attackMinion(handleClick.piece,pieces[tiles[xTile][yTile].occupant]);
         deselectPiece(handleClick.tile.x, handleClick.tile.y)
-        myTurn = false;
+        myTurn = !successfulMove;
         document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
       }
       //The attack was in range, but there was no target
       else{
         deselectPiece(handleClick.tile.x, handleClick.tile.y);
+        handleClick.midMove = false;
+        handleClick.tile.x = -1;
+        handleClick.tile.y = -1;
+        handleClick.piece = null;
       }
     }
     //Else you clicked outside the valid range, deselect the piece
     else{
       deselectPiece(handleClick.tile.x, handleClick.tile.y);
+      handleClick.midMove = false;
+      handleClick.tile.x = -1;
+      handleClick.tile.y = -1;
+      handleClick.piece = null;
     }
     //Nothing is selected anymore
-    handleClick.midMove = false;
-    handleClick.tile.x = -1;
-    handleClick.tile.y = -1;
-    handleClick.piece = null;
+    if(successfulMove){
+      handleClick.midMove = false;
+      handleClick.tile.x = -1;
+      handleClick.tile.y = -1;
+      handleClick.piece = null;
+    }
   }
 
 }
@@ -339,6 +355,8 @@ function handleMouseDown(e){
   if(tiles[xTile][yTile].occupant >-1 && pieces[tiles[xTile][yTile].occupant].mine){
     canvas.addEventListener("mousemove", handleMouseMove, false);
     drag.piece = selectPiece(xTile, yTile);
+    drag.xTile = drag.piece.xTile;
+    drag.yTile = drag.piece.yTile;
     drag.active = true;
   }
   //It's a minion, but it ain't yours. Still, show info in menu.
@@ -360,13 +378,14 @@ function handleMouseUp(e){
     //If it's a valid move, make it
     if(validMove(xTile,yTile,drag.piece.selectPattern(isAttack),isAttack)){
       //Send message that this piece was moved
-      socket.emit("move player", {"x1": drag.piece.xTile, "y1": drag.piece.yTile, "x2": xTile, "y2": yTile});
-      movePiece(drag.piece.xTile, drag.piece.yTile, xTile, yTile);
+      var successfulMove = movePiece(drag.xTile, drag.yTile, xTile, yTile);
+      if(successfulMove)
+        socket.emit("move player", {"x1": drag.xTile, "y1": drag.yTile, "x2": xTile, "y2": yTile});
       //Prevent a click event from happening if there was motion by setting the timestamp to -1
       //since click events check to see how much time passed from mousedown.
       drag.timestamp = -1;
       //Turn's over, boys
-      myTurn = false;
+      myTurn = !successfulMove;
       document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
     }
   }
@@ -377,6 +396,8 @@ function handleMouseUp(e){
   drag.piece = null;
   drag.x = -1;
   drag.y = -1;
+  drag.xTile = -1;
+  drag.yTile = -1;
   drag.active = false;
   canvas.removeEventListener("mousemove", handleMouseMove, false);
 
@@ -481,11 +502,14 @@ function movePiece(x1,y1,x2,y2){
  
   //Update the Minion with its new location
   pieces[mover].xTile = x2;
+  console.log(pieces[mover].xTile);
   pieces[mover].yTile = y2;
   //Update the tiles with their new occupants
   tiles[x1][y1].occupant = -1;
   tiles[x2][y2].occupant = mover;
   //Turn is over!
+
+  return true; //move was successful
 }
 
 //What happens when a minion attacks?
@@ -501,6 +525,7 @@ function attackMinion(aggressor, defender){
     defender.alive = false;
 
   }
+  return true; //move was successful
 }
 
 //////////////////////////////////////////////////////////UI INTERACTIONS////////////////////////////////////////////////////////////////////

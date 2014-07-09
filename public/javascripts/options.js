@@ -56,6 +56,195 @@ var strategoSet = {
 };
 
 ////////////////////////////////////////////////////////////////////////////CHESS PIECES//////////////////////////////////////////////////////////////////////////////////////////
+//Function for moving as a pawn
+var pawnMoveFunction = function(){
+
+	var validTiles = [];
+	var xTile = this.xTile;
+	var yTile = this.yTile;
+	var range = 1;
+
+	//increase range by 1 if the pawn is on his starting square
+	if(yTile == pieceSet[tiles[xTile][yTile].occupant].startingY){
+		range = range + 1;
+	}
+	for(var i = 1; i<=range; i++){
+		//If there's a piece in the way, stop the loop
+		if(!onBoard(xTile,yTile-i) || tiles[xTile][yTile-i].occupant > -1)
+			break;
+		validTiles.push([xTile,yTile-i]);
+	}
+	if(onBoard(xTile-1,yTile-1) && tiles[xTile-1][yTile-1].occupant > -1 && moveIsAttack){
+		validTiles.push([xTile-1,yTile-1]);
+	}
+	if(onBoard(xTile+1,yTile-1) && tiles[xTile+1][yTile-1].occupant > -1 && moveIsAttack){
+		validTiles.push([xTile+1,yTile-1]);
+	}
+
+	return validTiles;
+}
+
+var bishopMoveFunction = function(){
+
+	var validTiles = [];
+	var xTile = this.xTile;
+	var yTile = this.yTile;
+	var range = 8;
+
+	for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile+i,yTile+i]);
+		if(!onBoard(xTile+i,yTile+i) || tiles[xTile+i][yTile+i].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile+i,yTile-i]);
+  	if(!onBoard(xTile+i,yTile-i) || tiles[xTile+i][yTile-i].occupant > -1) break;
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile-i,yTile+i]);
+  	if(!onBoard(xTile-i,yTile+i) || tiles[xTile-i][yTile+i].occupant > -1) break;
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile-i,yTile-i]);
+  	if(!onBoard(xTile-i,yTile-i) || tiles[xTile-i][yTile-i].occupant > -1) break;
+  }
+
+  return validTiles;
+}
+
+var knightMoveFunction = function(){
+
+	var validTiles = [];
+	var xTile = this.xTile;
+	var yTile = this.yTile;
+
+	for(var i = -2; i <= 2; i++){
+		if(i==0) continue; //skip 0
+		var j = 3 - Math.abs(i); // 2 for 1 and 1 for 2
+		validTiles.push([xTile+i,yTile+j]);
+		validTiles.push([xTile+i,yTile-j]);
+	}
+  return validTiles;
+}
+
+var rookMoveFunction = function(){
+
+	var validTiles = [];
+	var xTile = this.xTile;
+	var yTile = this.yTile;
+	var range = 8;
+
+	for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile+i,yTile]);
+		if(!onBoard(xTile+i,yTile) || tiles[xTile+i][yTile].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile-i,yTile]);
+  	if(!onBoard(xTile-i,yTile) || tiles[xTile-i][yTile].occupant > -1) break;
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile,yTile+i]);
+  	if(!onBoard(xTile,yTile+i) || tiles[xTile][yTile+i].occupant > -1) break;
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile,yTile-i]);
+  	if(!onBoard(xTile,yTile-i) || tiles[xTile][yTile-i].occupant > -1) break;
+	}		
+
+  return validTiles;
+}
+
+var queenMoveFunction = function(){
+
+	var validTiles = [];
+	var xTile = this.xTile;
+	var yTile = this.yTile;
+	var range = 8;
+
+	for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile+i,yTile+i]);
+		if(!onBoard(xTile+i,yTile+i) || tiles[xTile+i][yTile+i].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile+i,yTile-i]);
+  	if(!onBoard(xTile+i,yTile-i) || tiles[xTile+i][yTile-i].occupant > -1) break;
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile-i,yTile+i]);
+  	if(!onBoard(xTile-i,yTile+i) || tiles[xTile-i][yTile+i].occupant > -1) break;
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile-i,yTile-i]);
+  	if(!onBoard(xTile-i,yTile-i) || tiles[xTile-i][yTile-i].occupant > -1) break;
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile+i,yTile]);
+		if(!onBoard(xTile+i,yTile) || tiles[xTile+i][yTile].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile-i,yTile]);
+  	if(!onBoard(xTile-i,yTile) || tiles[xTile-i][yTile].occupant > -1) break;
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile,yTile+i]);
+  	if(!onBoard(xTile,yTile+i) || tiles[xTile][yTile+i].occupant > -1) break;
+  }
+  for(var i = 1; i<=range; i++){
+  	validTiles.push([xTile,yTile-i]);
+  	if(!onBoard(xTile,yTile-i) || tiles[xTile][yTile-i].occupant > -1) break;
+  }
+
+  return validTiles;
+}
+
+var kingMoveFunction = function(){
+
+	//This is to determine if you're allowed to castle;
+	if(kingMoveFunction.hasMoved == undefined){
+		kingMoveFunction.hasMoved = false;
+		kingMoveFunction.leftRookMoved = false;
+		kingMoveFunction.rightRookMoved = false;
+	}
+
+	var validTiles = [];
+	var xTile = this.xTile;
+	var yTile = this.yTile;
+	var range = 1;
+
+	for(var i = -1*range; i<=range; i++){
+		for(var j = -1*range; j<=range; j++){
+			validTiles.push([xTile+i,yTile+j]);
+		}
+	}
+
+	//Castling!
+	//Based on player number, make sure all the spaces between the rook and king are empty and not attacked
+	//Only relevant if your own king, this prevents infinite loop from checking if a space is attacked by
+	//opposing minions when looking for castles
+	if(!kingMoveFunction.hasMoved && this.mine){
+		if(!kingMoveFunction.leftRookMoved){
+			if(playerNumber == 1){
+				if(castleCheckIfCanCastle(1,7) && castleCheckIfCanCastle(2,7) && castleCheckIfCanCastle(3,7))
+					validTiles.push([2,7]);
+			}
+			else{
+				if(castleCheckIfCanCastle(1,7) && castleCheckIfCanCastle(2,7))
+					validTiles.push([1,7]);
+			}
+		}
+		if(!kingMoveFunction.rightRookMoved){
+			if(playerNumber == 1){
+				if(castleCheckIfCanCastle(5,7) && castleCheckIfCanCastle(6,7))
+					validTiles.push([6,7]);
+			}
+			else{
+				if(castleCheckIfCanCastle(4,7) && castleCheckIfCanCastle(5,7) && castleCheckIfCanCastle(6,7))
+					validTiles.push([5,7]);
+			}
+		}
+	}
+
+  return validTiles;
+}
 
 var chessSet = {
 	"opponentsVisible": true,
@@ -81,7 +270,7 @@ var chessSet = {
 	},
 	"fieldWidth": 8,
 	"fieldLength": 8,
-	"specialRules": [pawnPromotionRule, kingPositionRule, castleRule, castleRookMove, checkRule, checkmateRule]
+	"specialRules": [pawnPromotionRule, kingPositionRule, castleRule, castleRookMove, checkRule]
 };
 
 var minionsSet = {
@@ -138,7 +327,7 @@ function promotePawn(x,y,job){
   	pieces[tiles[x][0].occupant].motion = bishopMoveFunction;
   }
 
-  socket.emit("piece change", {"x": x, "y": y, "image": pieces[tiles[x][0].occupant].image.src});
+  socket.emit("piece change", {"x": x, "y": y, "image": pieces[tiles[x][0].occupant].image.src, "motion": pieces[tiles[x][0].occupant].motion + ""});
 
 	$("#promotionModal").modal("hide");
 }
@@ -150,7 +339,6 @@ function kingPositionRule(){
 		kingPositionRule.ran = true;
 		//Only do it as second player
 		if(playerNumber == 2){
-			console.log(playerNumber);
 			//swamp the queen and king
 			pieces[tiles[4][7].occupant].job = "queen";
 			pieces[tiles[4][7].occupant].image.src = "/images/chess/queen2.png";
@@ -160,8 +348,8 @@ function kingPositionRule(){
 			pieces[tiles[3][7].occupant].motion = kingMoveFunction;
 			pieceSet[14].startingX = 3; //Need to record where the king started for castling
 			//Because I automatically invert which 
-  		socket.emit("piece change", {"x": 4, "y": 7, "image": pieces[tiles[4][7].occupant].image.src, "job": "queen"});
-  		socket.emit("piece change", {"x": 3, "y": 7, "image": pieces[tiles[3][7].occupant].image.src, "job": "king"});
+  		socket.emit("piece change", {"x": 4, "y": 7, "image": pieces[tiles[4][7].occupant].image.src, "job": "queen", "motion": queenMoveFunction + ""});
+  		socket.emit("piece change", {"x": 3, "y": 7, "image": pieces[tiles[3][7].occupant].image.src, "job": "king", "motion": kingMoveFunction + ""});
   	}
 	}
 }
@@ -188,6 +376,41 @@ function castleRule(){
 	if(tiles[7][7].occupant == -1){
 		kingMoveFunction.rightRookMoved = true;
 	}
+}
+
+//used by king move function to see if a castling is valid
+//Called by king move function on each square between the rook and king to see if
+//each square is both not occupied AND is not being attacked by an opposing piece
+function castleCheckIfCanCastle(xTile,yTile){
+	var allTheTiles = []; //will hold all the tiles the opponent can hit up baby
+	var rMinions = remotePlayer.getMinions();
+
+	var king = playerNumber == 1? pieces[14] : pieces[15]; //king number based on that playernumber
+
+	for(var x in rMinions){
+		if(rMinions[x].alive == false)
+			continue;
+		//Pawns are special because they only move "forward" so the motion function we have for them is
+		//in the incorrect direction for the opponent
+		if(rMinions[x].job == "pawn"){
+			allTheTiles = allTheTiles.concat([[rMinions[x].xTile+1, rMinions[x].yTile+1], [rMinions[x].xTile-1, rMinions[x].yTile+1]]);
+		}
+		else{
+			allTheTiles = allTheTiles.concat(rMinions[x].motion());
+		}
+	}
+
+	//the square is occupied
+	if(tiles[xTile][yTile].occupant > -1)
+		return false;
+
+	//the square is being attacked
+	for(var index in allTheTiles){
+      if(allTheTiles[index][0] == xTile && allTheTiles[index][1] == yTile)
+        return false;
+  }
+
+  return true;
 }
 
 //Supplement to the castle rule that figures out when the king castles and moves the rook appropriately
@@ -249,198 +472,121 @@ function castleRookMove(){
 
 //Game over, bub
 function checkmateRule(){
+	console.log("see if in checkmate");
+	var lMinions = localPlayer.getMinions();
+	var allTheTiles = []; //will hold all the tiles the opponent can hit up baby
+	var xTile;
+	var yTile;
+	var target; //keeps track of if a minion is killed by our testing each move
+	var q = 0;
+	for(var i in lMinions){
+		if(lMinions[i].alive == false)
+			continue
+		//Pawns are special because they only move "forward" so the motion function we have for them is
+		//in the incorrect direction for the opponent
+		var tilesToCheck = lMinions[i].motion();
+		for(var j in tilesToCheck){
+			console.log(q++);
+			xTile = lMinions[i].xTile;
+			yTile = lMinions[i].yTile;
+			if(onBoard(tilesToCheck[j][0],tilesToCheck[j][1]))
+				target = tiles[tilesToCheck[j][0]][tilesToCheck[j][1]].occupant;
+			else
+				target = -1;
+			if((target == -1 || !pieces[target].mine) && movePiece(xTile,yTile,tilesToCheck[j][0],tilesToCheck[j][1])){
+				revertMove(xTile,yTile,tilesToCheck[j][0],tilesToCheck[j][1],target);
+				return; //There is a valid move to get out of check
+			}
+		}
+	}
+	alert("Checkmate. You lose.");
+}
 
+//Because I'm too lazy to think of a better way, we test for checkmate by doing every single possible
+//move and then reverting it
+function revertMove(x1,y1,x2,y2,potentiallyKilledMinion){
+	var mover = tiles[x2][y2].occupant; //mover holds the number of the selected piece
+
+	//Make the move to check if it takes you out of check 
+  pieces[mover].xTile = x1;
+  pieces[mover].yTile = y1;
+  //Update the tiles with their new occupants
+  tiles[x1][y1].occupant = mover;
+  tiles[x2][y2].occupant = potentiallyKilledMinion;
 }
 
 //Can't move through this shit
 function checkRule(){
+	if(checkRule.firstRun == undefined){
+		checkRule.firstRun = false;
+		//Override the move function so we can do a check for check
+		movePiece = function(x1,y1,x2,y2){
+			if(!onBoard(x2,y2))
+				return false;
 
+			var mover = tiles[x1][y1].occupant; //mover holds the number of the selected piece
+			var target = tiles[x2][y2].occupant;
+
+			//Make the move to check if it takes you out of check 
+		  pieces[mover].xTile = x2;
+		  pieces[mover].yTile = y2;
+		  if(target > -1)
+		  	pieces[target].alive = false;
+
+		  //Update the tiles with their new occupants
+		  tiles[x1][y1].occupant = -1;
+		  tiles[x2][y2].occupant = mover;
+
+		  //See if we're trying to move into check
+		  if(checkIfCheck() && pieces[mover].mine){
+		  	//Revert the move
+			  pieces[mover].xTile = x1;
+			  pieces[mover].yTile = y1;
+			  tiles[x1][y1].occupant = mover;
+			  tiles[x2][y2].occupant = target;
+			  if(target > -1)
+		  		pieces[target].alive = true;
+			  return false;
+		  }
+		  else{
+		  	return true;
+		  }
+		};
+	}
+	if(checkIfCheck()){
+		if(checkRule.callCheckmate == false)
+					checkmateRule();
+		checkRule.callCheckmate = true;
+	}
+	else {
+		checkRule.callCheckmate = false;
+	}
 }
 
-//Function for moving as a pawn
-function pawnMoveFunction(){
+function checkIfCheck(){
+	var allTheTiles = []; //will hold all the tiles the opponent can hit up baby
+	var rMinions = remotePlayer.getMinions();
 
-	var validTiles = [];
-	var xTile = this.xTile;
-	var yTile = this.yTile;
-	var range = 1;
+	var king = playerNumber == 1? pieces[14] : pieces[15]; //king number based on that playernumber
 
-	//increase range by 1 if the pawn is on his starting square
-	if(yTile == pieceSet[tiles[xTile][yTile].occupant].startingY){
-		range = range + 1;
-	}
-	for(var i = 1; i<=range; i++){
-		//If there's a piece in the way, stop the loop
-		if(!onBoard(xTile,yTile-i) || tiles[xTile][yTile-i].occupant > -1)
-			break;
-		validTiles.push([xTile,yTile-i]);
-	}
-	if(onBoard(xTile-1,yTile-1) && tiles[xTile-1][yTile-1].occupant > -1 && moveIsAttack){
-		validTiles.push([xTile-1,yTile-1]);
-	}
-	if(onBoard(xTile+1,yTile-1) && tiles[xTile+1][yTile-1].occupant > -1 && moveIsAttack){
-		validTiles.push([xTile+1,yTile-1]);
-	}
-
-	return validTiles;
-}
-
-function bishopMoveFunction(){
-
-	var validTiles = [];
-	var xTile = this.xTile;
-	var yTile = this.yTile;
-	var range = 8;
-
-	for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile+i,yTile+i]);
-		if(!onBoard(xTile+i,yTile+i) || tiles[xTile+i][yTile+i].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile+i,yTile-i]);
-  	if(!onBoard(xTile+i,yTile-i) || tiles[xTile+i][yTile-i].occupant > -1) break;
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile-i,yTile+i]);
-  	if(!onBoard(xTile-i,yTile+i) || tiles[xTile-i][yTile+i].occupant > -1) break;
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile-i,yTile-i]);
-  	if(!onBoard(xTile-i,yTile-i) || tiles[xTile-i][yTile-i].occupant > -1) break;
-  }
-
-  return validTiles;
-}
-
-function knightMoveFunction(){
-
-	var validTiles = [];
-	var xTile = this.xTile;
-	var yTile = this.yTile;
-
-	for(var i = -2; i <= 2; i++){
-		if(i==0) continue; //skip 0
-		var j = 3 - Math.abs(i); // 2 for 1 and 1 for 2
-		validTiles.push([xTile+i,yTile+j]);
-		validTiles.push([xTile+i,yTile-j]);
-	}
-  return validTiles;
-}
-
-function rookMoveFunction(){
-
-	var validTiles = [];
-	var xTile = this.xTile;
-	var yTile = this.yTile;
-	var range = 8;
-
-	for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile+i,yTile]);
-		if(!onBoard(xTile+i,yTile) || tiles[xTile+i][yTile].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile-i,yTile]);
-  	if(!onBoard(xTile-i,yTile) || tiles[xTile-i][yTile].occupant > -1) break;
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile,yTile+i]);
-  	if(!onBoard(xTile,yTile+i) || tiles[xTile][yTile+i].occupant > -1) break;
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile,yTile-i]);
-  	if(!onBoard(xTile,yTile-i) || tiles[xTile][yTile-i].occupant > -1) break;
-	}		
-
-  return validTiles;
-}
-
-function queenMoveFunction(){
-
-	var validTiles = [];
-	var xTile = this.xTile;
-	var yTile = this.yTile;
-	var range = 8;
-
-	for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile+i,yTile+i]);
-		if(!onBoard(xTile+i,yTile+i) || tiles[xTile+i][yTile+i].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile+i,yTile-i]);
-  	if(!onBoard(xTile+i,yTile-i) || tiles[xTile+i][yTile-i].occupant > -1) break;
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile-i,yTile+i]);
-  	if(!onBoard(xTile-i,yTile+i) || tiles[xTile-i][yTile+i].occupant > -1) break;
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile-i,yTile-i]);
-  	if(!onBoard(xTile-i,yTile-i) || tiles[xTile-i][yTile-i].occupant > -1) break;
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile+i,yTile]);
-		if(!onBoard(xTile+i,yTile) || tiles[xTile+i][yTile].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile-i,yTile]);
-  	if(!onBoard(xTile-i,yTile) || tiles[xTile-i][yTile].occupant > -1) break;
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile,yTile+i]);
-  	if(!onBoard(xTile,yTile+i) || tiles[xTile][yTile+i].occupant > -1) break;
-  }
-  for(var i = 1; i<=range; i++){
-  	validTiles.push([xTile,yTile-i]);
-  	if(!onBoard(xTile,yTile-i) || tiles[xTile][yTile-i].occupant > -1) break;
-  }
-
-  return validTiles;
-}
-
-function kingMoveFunction(){
-
-	//This is to determine if you're allowed to castle;
-	if(kingMoveFunction.hasMoved == undefined){
-		kingMoveFunction.hasMoved = false;
-		kingMoveFunction.leftRookMoved = false;
-		kingMoveFunction.rightRookMoved = false;
-	}
-
-	var validTiles = [];
-	var xTile = this.xTile;
-	var yTile = this.yTile;
-	var range = 1;
-
-	for(var i = -1*range; i<=range; i++){
-		for(var j = -1*range; j<=range; j++){
-			validTiles.push([xTile+i,yTile+j]);
+	for(var x in rMinions){
+		//skip dead minions
+		if(rMinions[x].alive == false)
+			continue;
+		//Pawns are special because they only move "forward" so the motion function we have for them is
+		//in the incorrect direction for the opponent
+		if(rMinions[x].job == "pawn"){
+			allTheTiles = allTheTiles.concat([[rMinions[x].xTile+1, rMinions[x].yTile+1], [rMinions[x].xTile-1, rMinions[x].yTile+1]]);
+		}
+		else{
+			allTheTiles = allTheTiles.concat(rMinions[x].motion());
 		}
 	}
 
-	//Castling!
-	//Based on player number, make sure all the spaces between the rook and king are empty
-	if(!kingMoveFunction.hasMoved){
-		if(!kingMoveFunction.leftRookMoved){
-			if(playerNumber == 1){
-				if(tiles[1][7].occupant == -1 && tiles[2][7].occupant == -1 && tiles[3][7].occupant == -1)
-					validTiles.push([2,7]);
-			}
-			else{
-				if(tiles[1][7].occupant == -1 && tiles[2][7].occupant == -1)
-					validTiles.push([1,7]);
-			}
-		}
-		if(!kingMoveFunction.rightRookMoved){
-			if(playerNumber == 1){
-				if(tiles[5][7].occupant == -1 && tiles[6][7].occupant == -1)
-					validTiles.push([6,7]);
-			}
-			else{
-				if(tiles[4][7].occupant == -1 && tiles[5][7].occupant == -1 && tiles[6][7].occupant == -1)
-					validTiles.push([5,7]);
-			}
-		}
-	}
-
-  return validTiles;
+	//You're in check if this is the case
+	for(var index in allTheTiles){
+      if(allTheTiles[index][0] == king.xTile && allTheTiles[index][1] == king.yTile){
+        return true;
+      }
+  }
 }

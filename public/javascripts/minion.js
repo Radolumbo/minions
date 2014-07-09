@@ -165,118 +165,7 @@ function selectPattern(isAttack){
 
       }
       break;
-    //Do a loop for each diaganol, this makes it easy to stop if you hit a piece
-    case "x":
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile+i,yTile+i]);
-  			if(!onBoard(xTile+i,yTile+i) || tiles[xTile+i][yTile+i].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile+i,yTile-i]);
-      	if(!onBoard(xTile+i,yTile-i) || tiles[xTile+i][yTile-i].occupant > -1) break;
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile-i,yTile+i]);
-      	if(!onBoard(xTile-i,yTile+i) || tiles[xTile-i][yTile+i].occupant > -1) break;
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile-i,yTile-i]);
-      	if(!onBoard(xTile-i,yTile-i) || tiles[xTile-i][yTile-i].occupant > -1) break;
-      }
-      break;
-     //Do a loop for each line
-   	case "+":
-   		for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile+i,yTile]);
-  			if(!onBoard(xTile+i,yTile) || tiles[xTile+i][yTile].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile-i,yTile]);
-      	if(!onBoard(xTile-i,yTile) || tiles[xTile-i][yTile].occupant > -1) break;
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile,yTile+i]);
-      	if(!onBoard(xTile,yTile+i) || tiles[xTile][yTile+i].occupant > -1) break;
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile,yTile-i]);
-      	if(!onBoard(xTile,yTile-i) || tiles[xTile][yTile-i].occupant > -1) break;
-      }
-   		break;
-   	//Like a king in chess, basically
- 		case "square":
- 			for(var i = -1*range; i<=range; i++){
- 				for(var j = -1*range; j<=range; j++){
- 					validTiles.push([xTile+i,yTile+j]);
- 				}
- 			}
- 			break;
-   	//Like a pawn in chess, can only move forward and gets a bonus if on the starting spot
-   	//Can move diaganol to attack if moveIsAttack is on
-   	case "chessPawn":
-   		//increase range by 1 if the pawn is on his starting square
-   		if(yTile == pieceSet[tiles[xTile][yTile].occupant].startingY){
-   			range = range + 1;
-   		}
-   		for(var i = 1; i<=range; i++){
-   			//If there's a piece in the way, stop the loop
-   			if(!onBoard(xTile,yTile-i) || tiles[xTile][yTile-i].occupant > -1)
-   				break;
-   			validTiles.push([xTile,yTile-i]);
-   		}
-   		if(onBoard(xTile-1,yTile-1) && tiles[xTile-1][yTile-1].occupant > -1 && moveIsAttack){
-   			validTiles.push([xTile-1,yTile-1]);
-   		}
-   		if(onBoard(xTile+1,yTile-1) && tiles[xTile+1][yTile-1].occupant > -1 && moveIsAttack){
-   			validTiles.push([xTile+1,yTile-1]);
-   		}
-   		break;
-   	//Like a knight in chess.
-   	case "chessKnight":
-   		for(var i = -2; i <= 2; i++){
-   			if(i==0) continue; //skip 0
-   			var j = 3 - Math.abs(i); // 2 for 1 and 1 for 2
-   			validTiles.push([xTile+i,yTile+j]);
-   			validTiles.push([xTile+i,yTile-j]);
-   		}
-   		break;
-   		//Simple solution: just combine x and + from above
-   	case "chessQueen":
-   		for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile+i,yTile+i]);
-  			if(!onBoard(xTile+i,yTile+i) || tiles[xTile+i][yTile+i].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile+i,yTile-i]);
-      	if(!onBoard(xTile+i,yTile-i) || tiles[xTile+i][yTile-i].occupant > -1) break;
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile-i,yTile+i]);
-      	if(!onBoard(xTile-i,yTile+i) || tiles[xTile-i][yTile+i].occupant > -1) break;
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile-i,yTile-i]);
-      	if(!onBoard(xTile-i,yTile-i) || tiles[xTile-i][yTile-i].occupant > -1) break;
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile+i,yTile]);
-  			if(!onBoard(xTile+i,yTile) || tiles[xTile+i][yTile].occupant > -1) break; //stop the loop if you hit a unit or hit the end of the board, but add the square that unit was on
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile-i,yTile]);
-      	if(!onBoard(xTile-i,yTile) || tiles[xTile-i][yTile].occupant > -1) break;
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile,yTile+i]);
-      	if(!onBoard(xTile,yTile+i) || tiles[xTile][yTile+i].occupant > -1) break;
-      }
-      for(var i = 1; i<=range; i++){
-      	validTiles.push([xTile,yTile-i]);
-      	if(!onBoard(xTile,yTile-i) || tiles[xTile][yTile-i].occupant > -1) break;
-      }
-   		break;
-    default:
-        //
+    
 	}
 	return validTiles;
 */
@@ -285,8 +174,10 @@ function selectPattern(isAttack){
 //Convert the minions to something that can be sent over a socket
 function extractMinions(minions){
 	var simpleMinions = [];
+	//Store movement function as string to send over function
+	//this is a TERRIBLE idea but oh well for now it will suffice
 	for(var x in minions){
-		simpleMinions.push({"image": minions[x].image.src, "xTile": minions[x].xTile, "yTile": minions[x].yTile, "job": minions[x].job});
+		simpleMinions.push({"image": minions[x].image.src, "xTile": minions[x].xTile, "yTile": minions[x].yTile, "job": minions[x].job, "motion": minions[x].motion + ""});
 	}
 	return simpleMinions;
 }

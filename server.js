@@ -45,6 +45,9 @@ function onSocketConnection(client){
 	client.on("move player", onMovePlayer);
 	client.on("piece change", onPieceChange);
 	client.on("join room", onJoinRoom);
+	client.on("wait", function(){this.broadcast.to(this.room).emit("wait")});
+	client.on("continue", function(){this.broadcast.to(this.room).emit("continue")});
+	client.on("game over", onGameOver);
 }
 
 //Join the room they want
@@ -128,6 +131,10 @@ function onMovePlayer(data) {
 //All you need to do is forward the data to the other client
 function onPieceChange(data){
 	this.broadcast.to(this.room).emit("piece change", data);
+}
+
+function onGameOver(data){
+	this.broadcast.to(this.room).emit("game over", data);
 }
 
 function playerById(id, match){

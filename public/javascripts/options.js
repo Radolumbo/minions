@@ -306,6 +306,7 @@ function pawnPromotionRule(){
         + '</div>\n'
       + '</div>');
       $("#promotionModal").modal("show");
+      socket.emit("wait");
 		}
 	}
 }
@@ -327,9 +328,10 @@ function promotePawn(x,y,job){
   	pieces[tiles[x][0].occupant].motion = bishopMoveFunction;
   }
 
-  socket.emit("piece change", {"x": x, "y": y, "image": pieces[tiles[x][0].occupant].image.src, "motion": pieces[tiles[x][0].occupant].motion + ""});
+  socket.emit("piece change", {"x": x, "y": y, "image": pieces[tiles[x][0].occupant].image.src, "job": job, "motion": pieces[tiles[x][0].occupant].motion + ""});
 
 	$("#promotionModal").modal("hide");
+	socket.emit("continue");
 }
 
 //Rule for kings starting in different positions
@@ -472,7 +474,6 @@ function castleRookMove(){
 
 //Game over, bub
 function checkmateRule(){
-	console.log("see if in checkmate");
 	var lMinions = localPlayer.getMinions();
 	var allTheTiles = []; //will hold all the tiles the opponent can hit up baby
 	var xTile;
@@ -486,7 +487,6 @@ function checkmateRule(){
 		//in the incorrect direction for the opponent
 		var tilesToCheck = lMinions[i].motion();
 		for(var j in tilesToCheck){
-			console.log(q++);
 			xTile = lMinions[i].xTile;
 			yTile = lMinions[i].yTile;
 			if(onBoard(tilesToCheck[j][0],tilesToCheck[j][1]))
@@ -499,7 +499,22 @@ function checkmateRule(){
 			}
 		}
 	}
-	alert("Checkmate. You lose.");
+	//Modal for checkmtae
+	$("#modals").append(
+		'<div class="modal fade" id="checkmateModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">\n'
+    + '<div class="modal-dialog">\n'
+      + '<div class="modal-content">\n'
+        + '<div class="modal-body">\n'
+          + 'Checkmate! You lose!!\n'
+            + '<a href="/matches">Go home, you&#39;re drunk.</a>'
+        + '</div>\n'
+      + '</div>\n'
+    + '</div>\n'
+  + '</div>');
+  $("#checkmateModal").modal("show");
+  socket.emit("game over", {message: "You checkmated your opponent! Congrats!"});
+  gameOver = true;
+  socket.close();
 }
 
 //Because I'm too lazy to think of a better way, we test for checkmate by doing every single possible
@@ -513,6 +528,11 @@ function revertMove(x1,y1,x2,y2,potentiallyKilledMinion){
   //Update the tiles with their new occupants
   tiles[x1][y1].occupant = mover;
   tiles[x2][y2].occupant = potentiallyKilledMinion;
+
+  if(potentiallyKilledMinion != -1){
+  	pieces[potentiallyKilledMinion].alive = true;
+  }
+
 }
 
 //Can't move through this shit
@@ -553,9 +573,11 @@ function checkRule(){
 		  }
 		};
 	}
+
 	if(checkIfCheck()){
-		if(checkRule.callCheckmate == false)
-					checkmateRule();
+		if(checkRule.callCheckmate == false){
+			checkmateRule();
+		}
 		checkRule.callCheckmate = true;
 	}
 	else {
@@ -585,8 +607,9 @@ function checkIfCheck(){
 
 	//You're in check if this is the case
 	for(var index in allTheTiles){
-      if(allTheTiles[index][0] == king.xTile && allTheTiles[index][1] == king.yTile){
-        return true;
-      }
+    if(allTheTiles[index][0] == king.xTile && allTheTiles[index][1] == king.yTile){
+      return true;
+    }
   }
+  return false;
 }

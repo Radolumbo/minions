@@ -19,6 +19,7 @@ var localPlayer; //You
 var playerNumber; 
 var pieces = []; // All the pieces on the board
 var freePlay = false;
+var gameOver = false;
 
 
 ///////////////////////////////////////////////////INITIALIZE///////////////////////////////////////////////////////
@@ -73,7 +74,14 @@ function connectToServer(){
   socket.on("move player", onMovePlayer);
   socket.on("remove player", onRemovePlayer);
   socket.on("your id", function(data){localPlayer.id = data;}); //RECEIVE YOUR ID
-  socket.on("piece change", onPieceChange)
+  socket.on("piece change", onPieceChange);
+  socket.on("wait", function(){myTurn = false;
+        document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
+  });
+  socket.on("continue", function(){myTurn = true;
+      document.getElementById("whoseTurn").innerHTML = 'YOUR TURN!';
+  });
+  socket.on("game over", onGameOver);
 }
 
 function onSocketConnected(){
@@ -140,7 +148,8 @@ function onRemovePlayer(data) {
     console.log("something went horribly wrong, could not find opponent " + data.id);
     return;
   }
-  alert("The opponet left! What a dick!");
+  if(!gameOver)
+    alert("The opponet left! What a jerk!");
   remotePlayer = null;
 };
 
@@ -156,6 +165,23 @@ function onPieceChange(data){
   if(data.motion)
     eval("pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].motion = " + data.motion);
 
+}
+
+function onGameOver(data){
+  gameOver = true;
+  $("#modals").append(
+    '<div class="modal fade" id="gameoverModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">\n'
+    + '<div class="modal-dialog">\n'
+      + '<div class="modal-content">\n'
+        + '<div class="modal-body">\n'
+          + data.message + '\n'
+            + '<a href="/matches">Go home, you&#39;re drunk.</a>'
+        + '</div>\n'
+      + '</div>\n'
+    + '</div>\n'
+  + '</div>');
+  $("#gameoverModal").modal("show");
+  socket.close();
 }
 
 /////////////////////////////////////////CANVAS///////////////////////////////////////
@@ -386,7 +412,8 @@ function handleMouseUp(e){
       drag.timestamp = -1;
       //Turn's over, boys
       myTurn = !successfulMove;
-      document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
+      if(!myTurn)
+        document.getElementById("whoseTurn").innerHTML = 'THEIR TURN!';
     }
   }
   //Make sure to deselect the piece

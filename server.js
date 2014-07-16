@@ -178,6 +178,8 @@ function onGameOver(data){
 
 function playerById(id, match){
 	var players = matchToPlayers[match];
+	if(!players)
+		return false;
 	for(var i = 0; i < players.length; i++){
 		if(players[i].id == id)
 			return players[i];

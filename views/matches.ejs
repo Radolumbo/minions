@@ -3,13 +3,60 @@
   <head>
     <title><%= title %></title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> 
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
   </head>
   <body>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
-    <p><a href="/matches/new">Create a match, you cretin</a>
-    <% for(var i in matches){ %>
-      <p><%- link_to(matches[i].matchName, '/matches/'+matches[i]._id) %></p>
-    <% } %>
+    <p><a href="/matches/new" class="btn btn-primary btn-large"><i class="icon-white icon-play-circle"></i> Create A Match</a></p>
+    <div id="matchList">
+      <% for(var i in matches){ %>
+        <p><%- link_to(matches[i].matchName, '/matches/'+matches[i]._id) %></p>
+      <% } %>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script type="text/javascript">
+      //SOCKET STUFF FOR AUTO-UPDATING
+
+      var socket;
+       //workaround for working between localhost and radolumbo TEMPORARY
+      if(window.location.host=="localhost:3000"){
+        socket = io.connect("http://localhost", {port: 3000, transports: ["websocket"]});
+      }
+      else{
+        socket = io.connect("http://radolumbo.herokuapp.com", {port: 3000, transports: ["websocket"]});
+      }
+
+      socket.emit("join room", {"room": "matchesPage"});
+
+      //Set up listeners
+      socket.on("connect", onSocketConnected);
+      socket.on("disconnect", onSocketDisconnect);
+      socket.on("delete match", onDeleteMatch);
+      socket.on("create match", onCreateMatch);
+
+      function onCreateMatch(data){
+        $('#matchList').append("<a href='/matches/" + data.id +"'>" + data.matchName + "</a>");
+      }
+
+      function onDeleteMatch(data){
+        $('a[href="/matches/' + data.id + '"]').remove();
+        
+      }
+
+      function onSocketConnected(){
+        console.log("Connected to socket server");
+      };
+
+      function onSocketDisconnect(){
+        console.log("Disconnected from socket server");
+      };
+
+    </script>
+
   </body>
 </html>

@@ -63,10 +63,10 @@ function connectToServer(){
   //TODO:
   //workaround for working between localhost and radolumbo TEMPORARY
   if(window.location.host=="localhost:3000"){
-    socket = io.connect("http://localhost", {port: 3000, transports: ["websocket"]});
+    socket = io.connect("http://localhost/", {port: 3000, transports: ["websocket"]});
   }
   else{
-    socket = io.connect("http://radolumbo.herokuapp.com", {port: 3000, transports: ["websocket"]});
+    socket = io.connect("http://radolumbo.herokuapp.com/game", {port: 3000, transports: ["websocket"]});
   }
   socket.on("connect", onSocketConnected); //When this client connects
   socket.on("disconnect", onSocketDisconnect); //When this client disconnects

@@ -50,8 +50,3 @@ router.get('/:id', function(req, res) {
 });
 
 module.exports = router;
-
-//Find all matches from mongoDB
-function findMatches(){
-	var collection = db.get('matches');
-}

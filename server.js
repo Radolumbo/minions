@@ -27,6 +27,8 @@ function init(server){
 	// limits Socket.IO to using WebSockets and not falling back to anything else.
 	io.set("transports",["websocket"]);
 	//io.set("log level", 1);
+	listingNSP = io.of("/matches");
+	gameNSP = io.of("/game");
 
 	setEventHandlers();
 }
@@ -38,7 +40,7 @@ function setEventHandlers(){
 
 //what happens when a client connects
 function onSocketConnection(client){
-	util.log("New player has connectied: " + client.id);
+	util.log("New player has connected: " + client.id);
 	client.emit("your id", client.id);
 	client.on("disconnect", onClientDisconnect);
 	client.on("new player", onNewPlayer);
@@ -59,6 +61,11 @@ function onJoinRoom(data){
 
 //When a client disconnects, destroy their player object
 function onClientDisconnect() {
+	//Don't delete player who isn't in a match
+	if(this.room == "matchesPage"){
+		util.log("Person left matches page: " + this.id);
+		return;
+	}
 	var removePlayer = playerById(this.id,this.room);
 	var players= matchToPlayers[this.room];
 	if(!removePlayer){
@@ -78,20 +85,29 @@ function onClientDisconnect() {
 
 //Create a new player
 function onNewPlayer(data) {
-	
+	var theClient = this;
 	//associate the client id with the player id, makes things simple
 	var newPlayer = new Player(this.id);
 	//This is the first person to connect
-	if(matchToPlayers[this.room] == undefined)
+	if(matchToPlayers[this.room] == undefined){
 		matchToPlayers[this.room] = [];
+		//tell the people on the matches page to create the match
+		var matches = db.get('matches');
+		matches.find({_id: this.room},function(err,docs){
+			theClient.broadcast.to("matchesPage").emit("create match", {"id": docs[0]._id, "matchName": docs[0].matchName}); 
+		});
+	}
 	//This is the second person to connect, remove match from DB
 	else{
 		var matches = db.get('matches');
+		//Tell people on the matches page to delete the match 
+		this.broadcast.to("matchesPage").emit("delete match", {"id": this.room}); 
 		matches.remove({ _id : this.room}, function (err) {
 			if(err){
-				util.log("Failed to remove match " + this.room)
+				util.log("Failed to remove match " + this.room);
 			}
 		});
+
 	}
 
 	var players = matchToPlayers[this.room];

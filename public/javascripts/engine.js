@@ -82,6 +82,9 @@ function connectToServer(){
       document.getElementById("whoseTurn").innerHTML = 'YOUR TURN!';
   });
   socket.on("game over", onGameOver);
+  socket.on("match full", function(){
+    window.location.assign("/matches");
+  });
 }
 
 function onSocketConnected(){
@@ -150,6 +153,8 @@ function onRemovePlayer(data) {
   }
   if(!gameOver)
     alert("The opponet left! What a jerk!");
+
+  socket.close();
   remotePlayer = null;
 };
 

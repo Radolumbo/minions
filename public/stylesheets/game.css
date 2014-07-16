@@ -20,7 +20,28 @@ a {
 #menu{
 	display: inline-block;
 	vertical-align: top;
+
 }
+
+#chat{
+  display: inline-block;
+  vertical-align: top;
+  border-style: solid;
+  border-width: 2px;
+  padding: 5px;
+  background-color: #444440;
+  width: 310px;
+  height: 800px;
+  
+}
+
+#chatbox{
+  width: 300px;
+  height: 760px;
+  overflow: auto;
+  word-wrap:break-word;
+}
+
 
 .modal-content{
   background-color: #333329;

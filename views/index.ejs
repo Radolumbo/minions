@@ -3,11 +3,15 @@
   <head>
     <title><%= title %></title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> 
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    
   </head>
   <body>
     <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
-    <p><a href="/freeplay">PLAY ALONE</a></p>
-    <p><a href="/game">FIND OPPONENT</a></p>
+    <p>Welcome to <%= title %>!</p>
+    <p><a href="/matches" class="btn btn-warning btn-large"><i class="icon-white icon-play"></i> Play Chess!</a>
+</p>
   </body>
 </html>

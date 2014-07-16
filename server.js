@@ -27,8 +27,6 @@ function init(server){
 	// limits Socket.IO to using WebSockets and not falling back to anything else.
 	io.set("transports",["websocket"]);
 	//io.set("log level", 1);
-	listingNSP = io.of("/matches");
-	gameNSP = io.of("/game");
 
 	setEventHandlers();
 }
@@ -50,6 +48,11 @@ function onSocketConnection(client){
 	client.on("wait", function(){this.broadcast.to(this.room).emit("wait")});
 	client.on("continue", function(){this.broadcast.to(this.room).emit("continue")});
 	client.on("game over", onGameOver);
+	client.on("chat message", onChatMessage);
+}
+
+function onChatMessage(data){
+	this.broadcast.to(this.room).emit("chat message",data);
 }
 
 //Join the room they want
@@ -94,6 +97,11 @@ function onNewPlayer(data) {
 		//tell the people on the matches page to create the match
 		var matches = db.get('matches');
 		matches.find({_id: this.room},function(err,docs){
+			//Match does not exist
+			if(docs[0] == undefined){
+				this.emit("match full");
+				return false;
+			}
 			theClient.broadcast.to("matchesPage").emit("create match", {"id": docs[0]._id, "matchName": docs[0].matchName}); 
 		});
 	}
@@ -111,9 +119,16 @@ function onNewPlayer(data) {
 	}
 
 	var players = matchToPlayers[this.room];
-		//Pick the person whose turn it is to start once there's two players
-		//Players.length should be = 1 because that means one person has already connected
-		//and the second person is connecting now. We don't push this player until the end.
+
+	//if players.length = 2, this match is already full
+	if(players.length == 2){
+		this.emit("match full");
+		return;
+	}
+
+	//Pick the person whose turn it is to start once there's two players
+	//Players.length should be = 1 because that means one person has already connected
+	//and the second person is connecting now. We don't push this player until the end.
 	if(players.length == 1 && Math.floor(Math.random()*2)){
 		turn = players[0].id;
 	}

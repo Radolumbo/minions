@@ -291,20 +291,30 @@ function pawnPromotionRule(){
 	for(var x in tiles){
 		if(tiles[x][0].occupant > -1 && pieces[tiles[x][0].occupant].mine && pieces[tiles[x][0].occupant].job == "pawn"){
 			//Spawn modal for user to choose their new piece
-			$("#modals").append(
-				'<div class="modal fade" id="promotionModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">\n'
-        + '<div class="modal-dialog">\n'
-          + '<div class="modal-content">\n'
-            + '<div class="modal-body">\n'
-              + 'Pawn promotion!\n'
-              + '<button type="button" class="btn btn-default" onclick="promotePawn('+x+',0,\'queen\')">Queen</button>\n'
-              + '<button type="button" class="btn btn-default" onclick="promotePawn('+x+',0,\'knight\')">Knight</button>\n'
-              + '<button type="button" class="btn btn-default" onclick="promotePawn('+x+',0,\'rook\')">Rook</button>\n'
-              + '<button type="button" class="btn btn-default" onclick="promotePawn('+x+',0,\'bishop\')">Bishop</button>\n'
-            + '</div>\n'
-          + '</div>\n'
-        + '</div>\n'
-      + '</div>');
+			if(!pawnPromotionRule.addedModal){
+				pawnPromotionRule.addedModal = true;
+				$("#modals").append(
+					'<div class="modal fade" id="promotionModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">\n'
+	        + '<div class="modal-dialog">\n'
+	          + '<div class="modal-content">\n'
+	            + '<div class="modal-body">\n'
+	              + 'Pawn promotion!\n'
+	              + '<button id="qButton" type="button" class="btn btn-default" onclick="promotePawn('+x+',0,\'queen\')">Queen</button>\n'
+	              + '<button id="kButton" type="button" class="btn btn-default" onclick="promotePawn('+x+',0,\'knight\')">Knight</button>\n'
+	              + '<button id="rButton" type="button" class="btn btn-default" onclick="promotePawn('+x+',0,\'rook\')">Rook</button>\n'
+	              + '<button id="bButton" type="button" class="btn btn-default" onclick="promotePawn('+x+',0,\'bishop\')">Bishop</button>\n'
+	            + '</div>\n'
+	          + '</div>\n'
+	        + '</div>\n'
+	      + '</div>');
+			}
+			//Else just update the modal
+			else{
+				$("#qButton").attr("onclick","promotePawn("+x+",0,\'queen\')");
+				$("#kButton").attr("onclick","promotePawn("+x+",0,\'knight\')");
+				$("#rButton").attr("onclick","promotePawn("+x+",0,\'rook\')");
+				$("#bButton").attr("onclick","promotePawn("+x+",0,\'bishop\')");
+			}
       $("#promotionModal").modal("show");
       socket.emit("wait");
 		}
@@ -313,6 +323,8 @@ function pawnPromotionRule(){
 
 //Supplement to above function
 function promotePawn(x,y,job){
+	console.log(x);
+	console.log(pieces[tiles[x][0].occupant]);
 	pieces[tiles[x][0].occupant].job = job;
   pieces[tiles[x][0].occupant].image.src = "/images/chess/" + job + playerNumber + ".png"; //bad workaround
   if(job=="queen"){
@@ -331,6 +343,7 @@ function promotePawn(x,y,job){
   socket.emit("piece change", {"x": x, "y": y, "image": pieces[tiles[x][0].occupant].image.src, "job": job, "motion": pieces[tiles[x][0].occupant].motion + ""});
 
 	$("#promotionModal").modal("hide");
+
 	socket.emit("continue");
 }
 

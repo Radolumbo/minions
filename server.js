@@ -78,9 +78,17 @@ function onClientDisconnect() {
 	players.splice(players.indexOf(removePlayer),1);
 	this.broadcast.to(this.room).emit("remove player", {id:this.id});
 
-	//Both players are gone, remove it from the hash
+	//Both players are gone, remove it from the hash and delete the match if it hasn't been
 	if(players.length == 0){
 		delete matchToPlayers[this.room];
+		var matches = db.get('matches');
+		//Tell people on the matches page to delete the match 
+		this.broadcast.to("matchesPage").emit("delete match", {"id": this.room}); 
+		matches.remove({ _id : this.room}, function (err) {
+			if(err){
+				util.log("Failed to remove match " + this.room);
+			}
+		});
 	}
 
   util.log("Player has disconnected: "+this.id);

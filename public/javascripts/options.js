@@ -412,8 +412,7 @@ function pawnPromotionRule(){
 
 //Supplement to above function
 function promotePawn(x,y,job){
-	console.log(x);
-	console.log(pieces[tiles[x][0].occupant]);
+
 	pieces[tiles[x][0].occupant].job = job;
   pieces[tiles[x][0].occupant].image.src = "/images/chess/" + job + playerNumber + ".png"; //bad workaround
   if(job=="queen"){

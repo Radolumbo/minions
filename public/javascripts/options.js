@@ -74,11 +74,21 @@ var pawnMoveFunction = function(){
 			break;
 		validTiles.push([xTile,yTile-i]);
 	}
+	//Diaganol attacks
 	if(onBoard(xTile-1,yTile-1) && tiles[xTile-1][yTile-1].occupant > -1 && moveIsAttack){
 		validTiles.push([xTile-1,yTile-1]);
 	}
 	if(onBoard(xTile+1,yTile-1) && tiles[xTile+1][yTile-1].occupant > -1 && moveIsAttack){
 		validTiles.push([xTile+1,yTile-1]);
+	}
+	//En passant
+	if(yTile==3 && onBoard(xTile-1,3) && tiles[xTile-1][3].occupant > -1 && moveIsAttack &&
+			pieces[tiles[xTile-1][3].occupant].job == "pawn" && pieces[tiles[xTile-1][3].occupant].passant){
+		validTiles.push([xTile-1,2]);
+	}
+	if(yTile==3 && onBoard(xTile+1,3) && tiles[xTile+1][3].occupant > -1 && moveIsAttack &&
+			pieces[tiles[xTile+1][3].occupant].job == "pawn" && pieces[tiles[xTile+1][3].occupant].passant){
+		validTiles.push([xTile+1,2]);
 	}
 
 	return validTiles;
@@ -270,7 +280,7 @@ var chessSet = {
 	},
 	"fieldWidth": 8,
 	"fieldLength": 8,
-	"specialRules": [pawnPromotionRule, kingPositionRule, castleRule, castleRookMove, checkRule]
+	"specialRules": [kingPositionRule, enPassantRule, enPassantSupplement, pawnPromotionRule, castleRule, castleRookMove, checkRule]
 };
 
 var minionsSet = {
@@ -284,6 +294,85 @@ var gameHash = {
 	"chess": chessSet,
 	"minions": minionsSet
 };
+
+function enPassantRule(){
+	//Create reference to each pawn at the beginning of the game
+	if(enPassantRule.hasRun == undefined){
+		enPassantRule.pawns = [];
+		enPassantRule.hasRun = true;
+		for(var i = 0; i < 8; i++){
+			enPassantRule.pawns[i] = pieces[tiles[i][1].occupant];
+			enPassantRule.pawns[i].passant = false;
+			enPassantRule.pawns[i].neverPassant = false;
+		}
+	}
+	//Check each pawn
+	var pawns = enPassantRule.pawns;
+	for(var k in pawns){
+		var pawn = pawns[k];
+
+		//If it's no longer a pawn (via promotion)
+		if(pawn.job != "pawn"){
+			pawn.neverPassant = true;
+		}
+		//If the pawn was captured
+		else if(pawn.alive == false){
+			pawn.neverPassant = true;
+		}
+		//If the pawn moved somewhere else
+		else if(pawn.yTile != 1 && pawn.yTile != 3){
+			pawn.neverPassant = true;
+		}
+		//If the pawn has moved directly to tile 3 (jumped 2 spaces)
+		else if(!pawn.passant && !pawn.neverPassant && pawn.yTile == 3 && myTurn == true){
+			pawn.passant = true;
+		}
+		//The opportunity has passed
+		else if(pawn.passant && myTurn == false){
+			pawn.passant = false;
+			pawn.neverPassant = true;
+		}
+	}
+}
+
+//Kills the pawn that is getting passed
+function enPassantSupplement(){
+	//Get a reference to all your pawns
+	if(enPassantSupplement.hasRun == undefined){
+		enPassantSupplement.pawns = [];
+		enPassantSupplement.hasRun = true;
+		for(var i = 0; i < 8; i++){
+			enPassantSupplement.pawns[i] = pieces[tiles[i][6].occupant];
+			enPassantSupplement.pawns[i].aboutToPassant = false;
+			enPassantSupplement.pawns[i].passantX = -2; //Keep it 2 steps away from the board
+		}
+	}
+
+	var pawns = enPassantSupplement.pawns;
+	for(var k in pawns){
+		var pawn = pawns[k];
+		//If the pawn is in the appropriate row to passant, store its x position to later determine if it
+		//actually does passant
+		if(pawn.yTile == 3){
+			pawn.aboutToPassant = true;
+			pawn.passantX = pawn.xTile;
+		}
+		//He did it! HE REALLY DID IT!
+		else if(pawn.aboutToPassant && pawn.yTile == 2 && (pawn.xTile == pawn.passantX-1 || pawn.xTile == pawn.passantX+1)){
+			pieces[tiles[pawn.xTile][3].occupant].alive = false;
+			pieces[tiles[pawn.xTile][3].occupant].xTile = -1;
+			pieces[tiles[pawn.xTile][3].occupant].yTile = -1;
+			tiles[pawn.xTile][3].occupant = -1;
+  		socket.emit("piece change", {"x": pawn.xTile, "y": 3, alive: false});
+			pawn.aboutToPassant = false;
+		}
+		else{
+			pawn.aboutToPassant = false;
+			pawn.passantX = -2;
+		}
+	}
+
+}
 
 //Rule for promoting pawns
 function pawnPromotionRule(){

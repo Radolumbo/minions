@@ -169,7 +169,13 @@ function onPieceChange(data){
   //Motion is being changed
   if(data.motion)
     eval("pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].motion = " + data.motion);
-
+  //Minion was murdered in cold blood, please may we all take a moment of silence
+  if(data.alive == false){
+    pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].alive = false;
+    pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].xTile = -1;
+    pieces[tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant].yTile = -1;
+    tiles[(MAX_TILES-1)-data.x][(MAX_TILES-1)-data.y].occupant = -1;
+  }
 }
 
 function onGameOver(data){

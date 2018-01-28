@@ -17,7 +17,7 @@ var mongo = require('mongodb');
 var monk = require('monk');
 var db = monk(mongoUri);
 
-//Initialize server!
+//Initialize server
 function init(server){
 	pieces = [];
 	matchToPlayers = {};

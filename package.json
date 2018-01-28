@@ -6,18 +6,18 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
-    "express": "~4.2.0",
-    "serve-favicon": "*",
-    "morgan": "~1.0.0",
-    "cookie-parser": "~1.0.1",
     "body-parser": "~1.0.0",
+    "cookie-parser": "~1.0.1",
     "debug": "~0.7.4",
     "ejs": "*",
-    "stylus": "0.42.3",
-    "mongodb": "*",
-    "monk": "*",
-    "socket.io": "*",
+    "express": "~4.2.0",
     "express-helpers": "*",
-    "indexof": "*"
+    "indexof": "*",
+    "mongodb": "*",
+    "monk": "^6.0.5",
+    "morgan": "~1.0.0",
+    "serve-favicon": "*",
+    "socket.io": "*",
+    "stylus": "0.42.3"
   }
 }

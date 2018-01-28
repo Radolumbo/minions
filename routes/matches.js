@@ -35,6 +35,7 @@ router.post('/', function(req, res){
 	}, function(err, doc){
 		if(err){
 			//Return error
+			console.log(err);
 			res.send("Something went wrong. Woops. Tell me: shmozer@gmail.com");
 		}
 		else{

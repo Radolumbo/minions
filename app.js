@@ -7,6 +7,18 @@ var bodyParser = require('body-parser');
 var helpers = require('express-helpers')
 
 
+const monk = require('monk')
+
+// Connection URL
+const url = 'localhost:27017/myproject';
+
+const db = monk(url);
+const collection = db.get('document')
+
+collection.insert([{a: 1}, {a: 2}, {a: 3}])
+
+
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var matches = require('./routes/matches')
